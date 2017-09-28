@@ -9,13 +9,11 @@ module.exports = function () {
       build: {
         files: [
           {
-            expand: true,
             cwd: 'src/',
             src: ['**/*.js'],
             dest: 'build/src/',
           },
           {
-            expand: true,
             cwd: 'tests/specs/',
             src: ['**/*.js'],
             dest: 'build/specs/',
@@ -36,8 +34,7 @@ module.exports = function () {
           // https://github.com/gruntjs/grunt-contrib-concat
           banner: 'let FDO = (function(){',
           footer: '\n  return FDO;\n})();\nexport default FDO;\n',
-          //sourceMap: true,
-          //sourceMapStyle: 'inline', // embed link inline
+          sourceMap: false,
           process: function(code, path){
             if (path === 'src/index.js') return '';
             console.log('concatting', path);
@@ -160,6 +157,15 @@ module.exports = function () {
       dist: {
         options: {
           report: 'gzip', // false, 'none', 'min', 'gzip'. gzip is a little slower but not significant and good to see.
+          sourceMap: false,
+        },
+        files: {
+          'dist/fdo.dist.min.js': ['build/fdo-es5.js'],
+        },
+      },
+      test: {
+        options: {
+          report: 'gzip', // false, 'none', 'min', 'gzip'. gzip is a little slower but not significant and good to see.
           sourceMap: true,
           verbose: true,
         },
@@ -280,23 +286,24 @@ module.exports = function () {
   grunt.loadNpmTasks('grunt-replace');
   grunt.loadNpmTasks('grunt-contrib-concat');
 
-  grunt.registerTask('concat-dist-to-browserjs', function() {
-    console.log('- Copying dist to browser.js');
-    grunt.file.copy('dist/fdo.dist.min.js', 'dist/browser.js');
+  grunt.registerTask('concat-dist-to-fdojs', function() {
+    console.log('- Copying dist to fdo.js');
+    grunt.file.copy('dist/fdo.dist.min.js', 'dist/fdo.js');
   });
-  grunt.registerTask('concat-bug-to-browserjs', function() {
-    console.log('- Copying build to browser.js');
-    grunt.file.copy('build/fdo-es5-beautified.js', 'dist/browser.js');
+  grunt.registerTask('concat-bug-to-fdojs', function() {
+    console.log('- Copying build to fdo.js');
+    grunt.file.copy('build/fdo-es5-beautified.js', 'dist/fdo.js');
     grunt.file.copy('build/fdo-es5-beautified.js', 'dist/fdo.dist.min.js');
   });
 
   grunt.registerTask('clean', ['remove']);
-  grunt.registerTask('build', 'alias for dist', ['dist']);
-  grunt.registerTask('dist', 'lint, test, build, minify', ['clean', 'run:lint', 'mochaTest:failfast', '_dist']);
-  grunt.registerTask('_dist', 'just build dist', ['clean', 'concat:build', 'babel:concat', 'uglify:dist']);
-  grunt.registerTask('distq', 'create dist (inc browser.js) without testing', ['_dist', 'concat-dist-to-browserjs']);
-  grunt.registerTask('distbug', 'create dist for browser debugging, keeps asserts', ['clean', 'concat:test', 'babel:concat', 'run:jsbeautify', 'concat-bug-to-browserjs']);
-  grunt.registerTask('distheat', 'create dist for heatmap inspection, no asserts', ['clean', 'concat:build', 'babel:concat', 'run:jsbeautify', 'concat-bug-to-browserjs']);
+  grunt.registerTask('build', 'clean, concat, babel (sans sourcemaps)', ['clean', 'concat:build', 'babel:concat']);
+
+  grunt.registerTask('dist', 'lint, test, build, minify', ['clean', 'run:lint', 'mochaTest:failfast', 'build', 'uglify:dist']);
+  grunt.registerTask('distq', 'create dist (inc fdo.js) without testing', ['build', 'uglify:test', 'concat-dist-to-fdojs']);
+  grunt.registerTask('distbug', 'create dist for fdo debugging, keeps asserts', ['build', 'run:jsbeautify', 'concat-bug-to-fdojs']);
+  grunt.registerTask('distheat', 'create dist for heatmap inspection, no asserts', ['build', 'run:jsbeautify', 'concat-bug-to-fdojs']);
+
   grunt.registerTask('coverage', ['clean', 'run:coverage']);
   grunt.registerTask('test', 'lint then test', ['clean', 'run:lintdev', 'mochaTest:failfast']);
   grunt.registerTask('testq', 'test without linting', ['clean', 'mochaTest:nobail']);
