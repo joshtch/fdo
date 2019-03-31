@@ -1,20 +1,19 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   stripAnonVarsFromArrays,
-} from '../../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 import {
   countSolutions,
-} from '../../../../fdlib/tests/lib/lib';
+} from 'fdlib/tests/lib/lib';
 
 import FDO from '../../../src/fdo';
 
-describe('fdo/distribution/distribute.spec', function() {
+describe('fdo/distribution/distribute.spec', () => {
 
-  describe('override value distribution strategy per var', function() {
+  describe('override value distribution strategy per var', () => {
 
-    describe('with array', function() {
+    describe('with array', () => {
 
-      it('v1=min, v2=max', function() {
+      test('v1=min, v2=max', () => {
 
         let solver = new FDO({});
         solver.declRange('V1', 121, 124, {
@@ -27,10 +26,11 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 120);
 
         let solutions = solver.solve();
-        expect(solutions.length, 'all solutions').to.equal(16);
+        // all solutions
+        expect(solutions.length).toBe(16);
 
         // (basically V1 solves lo to hi, V2 goes hi to lo)
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 121, V2: 124},
           {V1: 121, V2: 123},
           {V1: 121, V2: 122},
@@ -50,7 +50,7 @@ describe('fdo/distribution/distribute.spec', function() {
         ]);
       });
 
-      it('v1=min, v2=max (regression)', function() {
+      test('v1=min, v2=max (regression)', () => {
 
         // regression: when domains include 0, should still lead to same result
 
@@ -65,10 +65,11 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 120);
 
         let solutions = solver.solve();
-        expect(solutions.length, 'all solutions').to.equal(16);
+        // all solutions
+        expect(solutions.length).toBe(16);
 
         // (basically V1 solves lo to hi, V2 goes hi to lo)
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 121, V2: 124},
           {V1: 121, V2: 123},
           {V1: 121, V2: 122},
@@ -88,7 +89,7 @@ describe('fdo/distribution/distribute.spec', function() {
         ]);
       });
 
-      it('should pick a random() value in markov', function() {
+      test('should pick a random() value in markov', () => {
 
         // note: this is pretty much the same as the previous min/max test except it uses
         // markov for it but it mimics min/max because we fixate the random() outcome
@@ -114,8 +115,9 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 120);
 
         let solutions = solver.solve();
-        expect(solutions.length, 'all solutions').to.equal(16);
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        // all solutions
+        expect(solutions.length).toBe(16);
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 121, V2: 124},
           {V1: 121, V2: 123},
           {V1: 121, V2: 122},
@@ -136,9 +138,9 @@ describe('fdo/distribution/distribute.spec', function() {
       });
     });
 
-    describe('with numbers', function() {
+    describe('with numbers', () => {
 
-      it('v1=min, v2=max', function() {
+      test('v1=min, v2=max', () => {
 
         let solver = new FDO({});
         solver.declRange('V1', 1, 4, {
@@ -151,10 +153,10 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 0);
 
         let solutions = solver.solve();
-        expect(countSolutions(solver)).to.equal(16);
+        expect(countSolutions(solver)).toBe(16);
 
         // (basically V1 solves lo to hi, V2 goes hi to lo)
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 1, V2: 4},
           {V1: 1, V2: 3},
           {V1: 1, V2: 2},
@@ -174,7 +176,7 @@ describe('fdo/distribution/distribute.spec', function() {
         ]);
       });
 
-      it('v1=min, v2=max (regression)', function() {
+      test('v1=min, v2=max (regression)', () => {
 
         // regression: when domains include 0, should still lead to same result
 
@@ -189,10 +191,10 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 0);
 
         let solutions = solver.solve();
-        expect(countSolutions(solver)).to.equal(16);
+        expect(countSolutions(solver)).toBe(16);
 
         // (basically V1 solves lo to hi, V2 goes hi to lo)
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 1, V2: 4},
           {V1: 1, V2: 3},
           {V1: 1, V2: 2},
@@ -212,7 +214,7 @@ describe('fdo/distribution/distribute.spec', function() {
         ]);
       });
 
-      it('should pick a random() value in markov', function() {
+      test('should pick a random() value in markov', () => {
 
         // note: this is pretty much the same as the previous min/max test except it uses
         // markov for it but it mimics min/max because we fixate the random() outcome
@@ -238,8 +240,8 @@ describe('fdo/distribution/distribute.spec', function() {
         solver.gt('V2', 0);
 
         let solutions = solver.solve();
-        expect(countSolutions(solver)).to.equal(16);
-        expect(stripAnonVarsFromArrays(solutions)).to.eql([
+        expect(countSolutions(solver)).toBe(16);
+        expect(stripAnonVarsFromArrays(solutions)).toEqual([
           {V1: 1, V2: 4},
           {V1: 1, V2: 3},
           {V1: 1, V2: 2},

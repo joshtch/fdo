@@ -6,16 +6,11 @@ new choice left it should return undefined to signify the end.
 */
 
 import {
-  LOG_FLAG_CHOICE,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-  THROW,
-} from '../../../fdlib/src/helpers';
-
-import {
+  LOG_FLAG_CHOICE,
+  NO_SUCH_VALUE,
   domain__debug,
   domain_containsValue,
   domain_createValue,
@@ -27,16 +22,11 @@ import {
   domain_middleElement,
   domain_min,
   domain_removeValue,
-} from '../../../fdlib/src/domain';
+  THROW,
+} from 'fdlib';
 
-import distribution_markovSampleNextFromDomain from './markov';
-
-import {
-  markov_createLegend,
-  markov_createProbVector,
-} from '../markov';
-
-// BODY_START
+import { markov_createLegend, markov_createProbVector } from '../markov';
+import { distribution_markovSampleNextFromDomain } from './markov';
 
 const FIRST_CHOICE = 0;
 const SECOND_CHOICE = 1;
@@ -47,25 +37,49 @@ function distribute_getNextDomainForVar(space, config, varIndex, choiceIndex) {
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
-  ASSERT(space.vardoms[varIndex] && !domain_isSolved(space.vardoms[varIndex]), 'CALLSITE_SHOULD_PREVENT_DETERMINED'); // TODO: test
+  ASSERT(
+    space.vardoms[varIndex] && !domain_isSolved(space.vardoms[varIndex]),
+    'CALLSITE_SHOULD_PREVENT_DETERMINED'
+  ); // TODO: test
 
   let valueStrategy = config.valueStratName;
 
-  // each var can override the value distributor
-  let configVarDistOptions = config.varDistOptions;
-  let varName = config.allVarNames[varIndex];
+  // Each var can override the value distributor
+  const configVarDistOptions = config.varDistOptions;
+  const varName = config.allVarNames[varIndex];
   ASSERT(typeof varName === 'string', 'VAR_NAME_SHOULD_BE_STRING');
-  let valueDistributorName = configVarDistOptions[varName] && configVarDistOptions[varName].valtype;
+  const valueDistributorName =
+    configVarDistOptions[varName] && configVarDistOptions[varName].valtype;
   if (valueDistributorName) valueStrategy = valueDistributorName;
 
-  let D = (typeof valueStrategy === 'function')
-    ? valueStrategy(space, varIndex, choiceIndex)
-    : _distribute_getNextDomainForVar(valueStrategy, space, config, varIndex, choiceIndex);
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribute_getNextDomainForVar; index', varIndex, 'is now', domain__debug(D)));
-  return D;
+  const domain =
+    typeof valueStrategy === 'function'
+      ? valueStrategy(space, varIndex, choiceIndex)
+      : _distribute_getNextDomainForVar(
+          valueStrategy,
+          space,
+          config,
+          varIndex,
+          choiceIndex
+        );
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log(
+      'distribute_getNextDomainForVar; index',
+      varIndex,
+      'is now',
+      domain__debug(domain)
+    )
+  );
+  return domain;
 }
 
-function _distribute_getNextDomainForVar(stratName, space, config, varIndex, choiceIndex) {
+function _distribute_getNextDomainForVar(
+  stratName,
+  space,
+  config,
+  varIndex,
+  choiceIndex
+) {
   ASSERT(space._class === '$space', 'EXPECTING_SPACE');
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
 
@@ -97,9 +111,10 @@ function _distribute_getNextDomainForVar(stratName, space, config, varIndex, cho
 
     case 'throw':
       return THROW('Throwing an error because val-strat requests it');
-  }
 
-  THROW('unknown next var func', stratName);
+    default:
+      THROW('unknown next var func', stratName);
+  }
 }
 
 /**
@@ -114,23 +129,33 @@ function _distribute_getNextDomainForVar(stratName, space, config, varIndex, cho
  * @returns {$domain|undefined} The new domain for this var index in the next space TOFIX: support small domains
  */
 function distribution_valueByList(space, config, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByList', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByList', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
-  let varName = config.allVarNames[varIndex];
+  const domain = space.vardoms[varIndex];
+  const varName = config.allVarNames[varIndex];
   ASSERT(typeof varName === 'string', 'VAR_NAME_SHOULD_BE_STRING');
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
-  let configVarDistOptions = config.varDistOptions;
+  const configVarDistOptions = config.varDistOptions;
   ASSERT(configVarDistOptions, 'space should have config.varDistOptions');
-  ASSERT(configVarDistOptions[varName], 'there should be distribution options available for every var', varName);
-  ASSERT(configVarDistOptions[varName].list, 'there should be a distribution list available for every var', varName);
-  let varDistOptions = configVarDistOptions[varName];
-  let listSource = varDistOptions.list;
+  ASSERT(
+    configVarDistOptions[varName],
+    'there should be distribution options available for every var',
+    varName
+  );
+  ASSERT(
+    configVarDistOptions[varName].list,
+    'there should be a distribution list available for every var',
+    varName
+  );
+  const varDistOptions = configVarDistOptions[varName];
+  const listSource = varDistOptions.list;
 
   let fallbackName = '';
   if (varDistOptions.fallback) {
@@ -146,24 +171,40 @@ function distribution_valueByList(space, config, varIndex, choiceIndex) {
   }
 
   switch (choiceIndex) {
-    case FIRST_CHOICE:
-      let nextValue = domain_getFirstIntersectingValue(domain, list);
+    case FIRST_CHOICE: {
+      const nextValue = domain_getFirstIntersectingValue(domain, list);
       if (nextValue === NO_SUCH_VALUE) {
-        return _distribute_getNextDomainForVar(fallbackName || 'naive', space, config, varIndex, FIRST_CHOICE);
-      } else {
-        space._lastChosenValue = nextValue;
+        return _distribute_getNextDomainForVar(
+          fallbackName || 'naive',
+          space,
+          config,
+          varIndex,
+          FIRST_CHOICE
+        );
       }
+
+      space._lastChosenValue = nextValue;
+
       return domain_createValue(nextValue);
+    }
 
     case SECOND_CHOICE:
       if (space._lastChosenValue >= 0) {
         return domain_removeValue(domain, space._lastChosenValue);
       }
-      return _distribute_getNextDomainForVar(fallbackName || 'naive', space, config, varIndex, SECOND_CHOICE);
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+      return _distribute_getNextDomainForVar(
+        fallbackName || 'naive',
+        space,
+        config,
+        varIndex,
+        SECOND_CHOICE
+      );
+
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -177,30 +218,38 @@ function distribution_valueByList(space, config, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueByMin(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByMin', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByMin', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
   switch (choiceIndex) {
-    case FIRST_CHOICE:
-      let minValue = domain_min(domain);
+    case FIRST_CHOICE: {
+      const minValue = domain_min(domain);
       space._lastChosenValue = minValue;
       return domain_createValue(minValue);
+    }
 
     case SECOND_CHOICE:
       // Cannot lead to empty domain because lo can only be SUP if
       // domain was solved and we assert it wasn't.
-      ASSERT(space._lastChosenValue >= 0, 'first choice should set this property and it should at least be 0', space._lastChosenValue);
+      ASSERT(
+        space._lastChosenValue >= 0,
+        'first choice should set this property and it should at least be 0',
+        space._lastChosenValue
+      );
       return domain_removeValue(domain, space._lastChosenValue);
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -214,31 +263,39 @@ function distribution_valueByMin(space, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueByMax(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByMax', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByMax', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
   switch (choiceIndex) {
-    case FIRST_CHOICE:
-      let maxValue = domain_max(domain);
+    case FIRST_CHOICE: {
+      const maxValue = domain_max(domain);
       space._lastChosenValue = maxValue;
       return domain_createValue(maxValue);
+    }
 
     case SECOND_CHOICE:
       // Cannot lead to empty domain because hi can only be SUB if
       // domain was solved and we assert it wasn't.
 
-      ASSERT(space._lastChosenValue > 0, 'first choice should set this property and it should at least be 1', space._lastChosenValue);
+      ASSERT(
+        space._lastChosenValue > 0,
+        'first choice should set this property and it should at least be 1',
+        space._lastChosenValue
+      );
       return domain_removeValue(domain, space._lastChosenValue);
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -253,28 +310,36 @@ function distribution_valueByMax(space, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueByMid(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByMid', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByMid', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
   switch (choiceIndex) {
-    case FIRST_CHOICE:
-      let middle = domain_middleElement(domain);
+    case FIRST_CHOICE: {
+      const middle = domain_middleElement(domain);
       space._lastChosenValue = middle;
       return domain_createValue(middle);
+    }
 
     case SECOND_CHOICE:
-      ASSERT(space._lastChosenValue >= 0, 'first choice should set this property and it should at least be 0', space._lastChosenValue);
+      ASSERT(
+        space._lastChosenValue >= 0,
+        'first choice should set this property and it should at least be 0',
+        space._lastChosenValue
+      );
       return domain_removeValue(domain, space._lastChosenValue);
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -287,22 +352,24 @@ function distribution_valueByMid(space, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueBySplitMin(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueBySplitMin', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueBySplitMin', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
-  let max = domain_max(domain);
+  const max = domain_max(domain);
 
   switch (choiceIndex) {
     case FIRST_CHOICE: {
       // TOFIX: can do this more optimal if coding it out explicitly
-      let min = domain_min(domain);
-      let mmhalf = min + Math.floor((max - min) / 2);
+      const min = domain_min(domain);
+      const mmhalf = min + Math.floor((max - min) / 2);
       space._lastChosenValue = mmhalf;
 
       // Note: domain is not determined so the operation cannot fail
@@ -311,15 +378,23 @@ function distribution_valueBySplitMin(space, varIndex, choiceIndex) {
     }
 
     case SECOND_CHOICE: {
-      ASSERT(space._lastChosenValue >= 0, 'first choice should set this property and it should at least be 0', space._lastChosenValue);
+      ASSERT(
+        space._lastChosenValue >= 0,
+        'first choice should set this property and it should at least be 0',
+        space._lastChosenValue
+      );
       // Note: domain is not determined so the operation cannot fail
       // Note: this must do some form of intersect, though maybe not constrain
-      return domain_intersection(domain, domain_createRange(space._lastChosenValue + 1, max));
+      return domain_intersection(
+        domain,
+        domain_createRange(space._lastChosenValue + 1, max)
+      );
     }
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -332,22 +407,24 @@ function distribution_valueBySplitMin(space, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueBySplitMax(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueBySplitMax', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueBySplitMax', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
-  let min = domain_min(domain);
+  const min = domain_min(domain);
 
   switch (choiceIndex) {
     case FIRST_CHOICE: {
       // TOFIX: can do this more optimal if coding it out explicitly
-      let max = domain_max(domain);
-      let mmhalf = min + Math.floor((max - min) / 2);
+      const max = domain_max(domain);
+      const mmhalf = min + Math.floor((max - min) / 2);
       space._lastChosenValue = mmhalf;
 
       // Note: domain is not determined so the operation cannot fail
@@ -356,15 +433,23 @@ function distribution_valueBySplitMax(space, varIndex, choiceIndex) {
     }
 
     case SECOND_CHOICE: {
-      ASSERT(space._lastChosenValue >= 0, 'first choice should set this property and it should at least be 0', space._lastChosenValue);
+      ASSERT(
+        space._lastChosenValue >= 0,
+        'first choice should set this property and it should at least be 0',
+        space._lastChosenValue
+      );
       // Note: domain is not determined so the operation cannot fail
       // Note: this must do some form of intersect, though maybe not constrain
-      return domain_intersection(domain, domain_createRange(min, space._lastChosenValue));
+      return domain_intersection(
+        domain,
+        domain_createRange(min, space._lastChosenValue)
+      );
     }
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
 /**
@@ -377,19 +462,23 @@ function distribution_valueBySplitMax(space, varIndex, choiceIndex) {
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueByMinMaxCycle(space, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByMinMaxCycle', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByMinMaxCycle', varIndex, choiceIndex)
+  );
   if (_isEven(varIndex)) {
     return distribution_valueByMin(space, varIndex, choiceIndex);
-  } else {
-    return distribution_valueByMax(space, varIndex, choiceIndex);
   }
+
+  return distribution_valueByMax(space, varIndex, choiceIndex);
 }
 
 /**
  * @param {number} n
  * @returns {boolean}
  */
-function _isEven(n) { return n % 2 === 0; }
+function _isEven(n) {
+  return n % 2 === 0;
+}
 
 /**
  * Search a domain by applying a markov chain to determine an optimal value
@@ -402,12 +491,14 @@ function _isEven(n) { return n % 2 === 0; }
  * @returns {$domain|undefined} The new domain this var index should get in the next space
  */
 function distribution_valueByMarkov(space, config, varIndex, choiceIndex) {
-  ASSERT_LOG(LOG_FLAG_CHOICE, log => log('distribution_valueByMarkov', varIndex, choiceIndex));
+  ASSERT_LOG(LOG_FLAG_CHOICE, log =>
+    log('distribution_valueByMarkov', varIndex, choiceIndex)
+  );
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof choiceIndex === 'number', 'CHOICE_SHOULD_BE_NUMBER');
 
-  let domain = space.vardoms[varIndex];
+  const domain = space.vardoms[varIndex];
   ASSERT_NORDOM(domain);
   ASSERT(domain && !domain_isSolved(domain), 'DOMAIN_SHOULD_BE_UNDETERMINED');
 
@@ -415,65 +506,91 @@ function distribution_valueByMarkov(space, config, varIndex, choiceIndex) {
     case FIRST_CHOICE: {
       // THIS IS AN EXPENSIVE STEP!
 
-      let varName = config.allVarNames[varIndex];
+      const varName = config.allVarNames[varIndex];
       ASSERT(typeof varName === 'string', 'VAR_NAME_SHOULD_BE_STRING');
-      let configVarDistOptions = config.varDistOptions;
+      const configVarDistOptions = config.varDistOptions;
       ASSERT(configVarDistOptions, 'space should have config.varDistOptions');
-      let distOptions = configVarDistOptions[varName];
+      const distOptions = configVarDistOptions[varName];
       ASSERT(distOptions, 'markov vars should have  distribution options');
-      let expandVectorsWith = distOptions.expandVectorsWith;
-      ASSERT(distOptions.matrix, 'there should be a matrix available for every var');
-      ASSERT(distOptions.legend || (typeof expandVectorsWith === 'number' && expandVectorsWith >= 0), 'every var should have a legend or expandVectorsWith set');
+      const { expandVectorsWith } = distOptions;
+      ASSERT(
+        distOptions.matrix,
+        'there should be a matrix available for every var'
+      );
+      ASSERT(
+        distOptions.legend ||
+          (typeof expandVectorsWith === 'number' && expandVectorsWith >= 0),
+        'every var should have a legend or expandVectorsWith set'
+      );
 
-      let random = distOptions.random || config._defaultRng;
+      const random = distOptions.random || config._defaultRng;
       ASSERT(typeof random === 'function', 'RNG_SHOULD_BE_FUNCTION');
 
-      // note: expandVectorsWith can be 0, so check with null
-      let values = markov_createLegend(typeof expandVectorsWith === 'number', distOptions.legend, domain);
-      let valueCount = values.length;
+      // Note: expandVectorsWith can be 0, so check with null
+      const values = markov_createLegend(
+        typeof expandVectorsWith === 'number',
+        distOptions.legend,
+        domain
+      );
+      const valueCount = values.length;
       if (!valueCount) {
         return NO_CHOICE;
       }
 
-      let probabilities = markov_createProbVector(space, distOptions.matrix, expandVectorsWith, valueCount);
-      let value = distribution_markovSampleNextFromDomain(domain, probabilities, values, random);
-      if (value == null) {
+      const probabilities = markov_createProbVector(
+        space,
+        distOptions.matrix,
+        expandVectorsWith,
+        valueCount
+      );
+      const value = distribution_markovSampleNextFromDomain(
+        domain,
+        probabilities,
+        values,
+        random
+      );
+      if (value === null) {
         return NO_CHOICE;
       }
 
-      ASSERT(domain_containsValue(domain, value), 'markov picks a value from the existing domain so no need for a constrain below');
+      ASSERT(
+        domain_containsValue(domain, value),
+        'markov picks a value from the existing domain so no need for a constrain below'
+      );
       space._lastChosenValue = value;
 
       return domain_createValue(value);
     }
 
     case SECOND_CHOICE: {
-      let lastValue = space._lastChosenValue;
-      ASSERT(typeof lastValue === 'number', 'should have cached previous value');
+      const lastValue = space._lastChosenValue;
+      ASSERT(
+        typeof lastValue === 'number',
+        'should have cached previous value'
+      );
 
-      let newDomain = domain_removeValue(domain, lastValue);
-      ASSERT(domain, 'domain cannot be empty because only one value was removed and the domain is asserted to be not solved above');
+      const newDomain = domain_removeValue(domain, lastValue);
+      ASSERT(
+        domain,
+        'domain cannot be empty because only one value was removed and the domain is asserted to be not solved above'
+      );
       ASSERT_NORDOM(newDomain, true, domain__debug);
       return newDomain;
     }
-  }
 
-  ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_TRHICE');
-  return NO_CHOICE;
+    default:
+      ASSERT(choiceIndex === THIRD_CHOICE, 'SHOULD_NOT_CALL_MORE_THAN_THRICE');
+      return NO_CHOICE;
+  }
 }
 
-// BODY_STOP
-
-export default distribute_getNextDomainForVar;
 export {
+  distribute_getNextDomainForVar,
   FIRST_CHOICE,
   SECOND_CHOICE,
   THIRD_CHOICE,
   NO_CHOICE,
-
-  // __REMOVE_BELOW_FOR_DIST__
-  // for testing:
-  _distribute_getNextDomainForVar,
+  // For testing:
   distribution_valueByList,
   distribution_valueByMarkov,
   distribution_valueByMax,
@@ -482,5 +599,5 @@ export {
   distribution_valueByMinMaxCycle,
   distribution_valueBySplitMax,
   distribution_valueBySplitMin,
-  // __REMOVE_ABOVE_FOR_DIST__
+  _distribute_getNextDomainForVar,
 };

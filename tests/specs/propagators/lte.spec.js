@@ -1,4 +1,3 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   fixt_arrdom_range,
   fixt_arrdom_ranges,
@@ -8,19 +7,21 @@ import {
   fixt_dom_ranges,
   fixt_dom_solved,
   fixt_domainEql,
-} from '../../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 
 import {
-  LOG_FLAG_PROPSTEPS,
-  LOG_FLAG_NONE,
   SUB,
   SUP,
-
+} from 'fdlib';
+import {
   ASSERT_SET_LOG,
-} from '../../../../fdlib/src/helpers';
+  LOG_FLAG_PROPSTEPS,
+  LOG_FLAG_NONE,
+} from 'fdlib';
+
 import {
   domain__debug,
-} from '../../../../fdlib/src/domain';
+} from 'fdlib';
 
 import {
   config_addVarDomain,
@@ -37,24 +38,24 @@ import {
   propagator_lteStepWouldReject,
 } from '../../../src/propagators/lte';
 
-describe('fdo/propagators/lte.spec', function() {
+describe('fdo/propagators/lte.spec', () => {
   // in general after call, max(v1) should be < max(v2) and min(v2) should be > min(v1)
   // it makes sure v1 and v2 have no values that can't possibly result in fulfilling <
 
-  it('should exist', function() {
-    expect(propagator_lteStepBare).to.be.a('function');
+  test('should exist', () => {
+    expect(typeof propagator_lteStepBare).toBe('function');
   });
 
-  it('should require two vars', function() {
+  test('should require two vars', () => {
     let space = space_createRoot();
 
-    expect(() => propagator_lteStepBare(space, 'A')).to.throw('VAR_INDEX_SHOULD_BE_NUMBER');
-    expect(() => propagator_lteStepBare(space, undefined, 'B')).to.throw('VAR_INDEX_SHOULD_BE_NUMBER');
+    expect(() => { propagator_lteStepBare(space, 'A') }).toThrowError('VAR_INDEX_SHOULD_BE_NUMBER');
+    expect(() => { propagator_lteStepBare(space, undefined, 'B') }).toThrowError('VAR_INDEX_SHOULD_BE_NUMBER');
   });
 
-  describe('with array', function() {
+  describe('with array', () => {
 
-    it('should throw for empty domain', function() {
+    test('should throw for empty domain', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(90, 100));
       config_addVarDomain(config, 'B', fixt_arrdom_range(200, 300));
@@ -70,13 +71,13 @@ describe('fdo/propagators/lte.spec', function() {
       let C = config.allVarNames.indexOf('C');
       let D = config.allVarNames.indexOf('D');
 
-      expect(_ => propagator_lteStepBare(space, config, A, B)).not.to.throw();
-      expect(_ => propagator_lteStepBare(space, config, A, D)).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_lteStepBare(space, config, C, B)).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_lteStepBare(space, config, C, D)).to.throw('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, A, B) }).not.toThrowError();
+      expect(_ => { propagator_lteStepBare(space, config, A, D) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, C, B) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, C, D) }).toThrowError('SHOULD_NOT_BE_REJECTED');
     });
 
-    it('should remove any value from v1 that is gt to max(v2)', function() {
+    test('should remove any value from v1 that is gt to max(v2)', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(90, 100));
       config_addVarDomain(config, 'B', fixt_arrdom_range(95, 99));
@@ -87,11 +88,11 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(90, 99));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(95, 99));
+      expect(space.vardoms[A]).toEqual(fixt_dom_range(90, 99));
+      expect(space.vardoms[B]).toEqual(fixt_dom_range(95, 99));
     });
 
-    it('should keep SUP if both ranges end there', function() {
+    test('should keep SUP if both ranges end there', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(90, SUP));
       config_addVarDomain(config, 'B', fixt_arrdom_range(95, SUP));
@@ -102,11 +103,11 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(90, SUP));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(95, SUP));
+      expect(space.vardoms[A]).toEqual(fixt_dom_range(90, SUP));
+      expect(space.vardoms[B]).toEqual(fixt_dom_range(95, SUP));
     });
 
-    it('should not affect domains when v1 < v2', function() {
+    test('should not affect domains when v1 < v2', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(90, 100));
       config_addVarDomain(config, 'B', fixt_arrdom_range(101, 101));
@@ -121,22 +122,25 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_range(101, 101));
     });
 
-    it('should not affect overlapping ranges when max(v1) < max(v2)', function() {
-      let config = config_create();
-      config_addVarDomain(config, 'A', fixt_arrdom_range(90, 150));
-      config_addVarDomain(config, 'B', fixt_arrdom_range(100, 200));
-      let space = space_createRoot();
-      space_initFromConfig(space, config);
+    test(
+      'should not affect overlapping ranges when max(v1) < max(v2)',
+      () => {
+        let config = config_create();
+        config_addVarDomain(config, 'A', fixt_arrdom_range(90, 150));
+        config_addVarDomain(config, 'B', fixt_arrdom_range(100, 200));
+        let space = space_createRoot();
+        space_initFromConfig(space, config);
 
-      let A = config.allVarNames.indexOf('A');
-      let B = config.allVarNames.indexOf('B');
+        let A = config.allVarNames.indexOf('A');
+        let B = config.allVarNames.indexOf('B');
 
-      propagator_lteStepBare(space, config, A, B);
-      fixt_domainEql(space.vardoms[A], fixt_dom_range(90, 150));
-      fixt_domainEql(space.vardoms[B], fixt_dom_range(100, 200));
-    });
+        propagator_lteStepBare(space, config, A, B);
+        fixt_domainEql(space.vardoms[A], fixt_dom_range(90, 150));
+        fixt_domainEql(space.vardoms[B], fixt_dom_range(100, 200));
+      }
+    );
 
-    it('should reject if min(v1) > max(v2)', function() {
+    test('should reject if min(v1) > max(v2)', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(190, 200));
       config_addVarDomain(config, 'B', fixt_arrdom_range(100, 150));
@@ -151,7 +155,7 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_empty());
     });
 
-    it('should reduce v2 if v1 is solved and > min(v2)', function() {
+    test('should reduce v2 if v1 is solved and > min(v2)', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(200, 200));
       config_addVarDomain(config, 'B', fixt_arrdom_range(100, 300));
@@ -166,7 +170,7 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_range(200, 300));
     });
 
-    it('should not change if v1 is solved and == min(v2)', function() {
+    test('should not change if v1 is solved and == min(v2)', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(200, 200));
       config_addVarDomain(config, 'B', fixt_arrdom_range(200, 300));
@@ -181,7 +185,7 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_range(200, 300));
     });
 
-    it('should be able to drop last range in v1', function() {
+    test('should be able to drop last range in v1', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_ranges([10, 20], [30, 40], [50, 60], [70, 98], [120, 150]));
       config_addVarDomain(config, 'B', fixt_arrdom_range(0, 100));
@@ -216,7 +220,7 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_range(10, 100));
     });
 
-    it('should be able to drop first range in v1', function() {
+    test('should be able to drop first range in v1', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_ranges([10, 20], [30, 40], [50, 60]));
       config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 100]));
@@ -251,12 +255,12 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_ranges([10, 10], [20, 100]));
     });
 
-    describe('edge of space', function() {
+    describe('edge of space', () => {
 
-      function test(domainA, domainB, domainC, domainD) {
+      function testThis(domainA, domainB, domainC, domainD) {
         let desc = 'should not crash with edge cases: ' + domain__debug(domainA) + ' < ' + domain__debug(domainB) + ' <= ' + domain__debug(domainB) + ' -> ' + domain__debug(domainC) + ' <= ' + domain__debug(domainD);
 
-        it(desc, function() {
+        test(desc, () => {
           let config = config_create();
           config_addVarDomain(config, 'A', domainA);
           config_addVarDomain(config, 'B', domainB);
@@ -272,19 +276,19 @@ describe('fdo/propagators/lte.spec', function() {
         });
       }
 
-      test(fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0));
-      test(fixt_arrdom_nums(0), fixt_arrdom_nums(SUP), fixt_arrdom_nums(0), fixt_arrdom_nums(SUP));
-      test(fixt_arrdom_nums(SUP), fixt_arrdom_nums(0), fixt_dom_empty(), fixt_dom_empty());
-      test(fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP));
+      testThis(fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0));
+      testThis(fixt_arrdom_nums(0), fixt_arrdom_nums(SUP), fixt_arrdom_nums(0), fixt_arrdom_nums(SUP));
+      testThis(fixt_arrdom_nums(SUP), fixt_arrdom_nums(0), fixt_dom_empty(), fixt_dom_empty());
+      testThis(fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP));
 
-      test(fixt_arrdom_range(0, SUP), fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0));
-      test(fixt_arrdom_nums(SUP), fixt_arrdom_range(0, SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP));
+      testThis(fixt_arrdom_range(0, SUP), fixt_arrdom_nums(0), fixt_arrdom_nums(0), fixt_arrdom_nums(0));
+      testThis(fixt_arrdom_nums(SUP), fixt_arrdom_range(0, SUP), fixt_arrdom_nums(SUP), fixt_arrdom_nums(SUP));
     });
   });
 
-  describe('with numbers', function() {
+  describe('with numbers', () => {
 
-    it('should throw for empty domain', function() {
+    test('should throw for empty domain', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 9, 10);
       config_addVarRange(config, 'B', 11, 15);
@@ -300,13 +304,13 @@ describe('fdo/propagators/lte.spec', function() {
       let C = config.allVarNames.indexOf('C');
       let D = config.allVarNames.indexOf('D');
 
-      expect(_ => propagator_lteStepBare(space, config, A, B)).not.to.throw();
-      expect(_ => propagator_lteStepBare(space, config, A, D)).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_lteStepBare(space, config, C, B)).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_lteStepBare(space, config, C, D)).to.throw('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, A, B) }).not.toThrowError();
+      expect(_ => { propagator_lteStepBare(space, config, A, D) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, C, B) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_lteStepBare(space, config, C, D) }).toThrowError('SHOULD_NOT_BE_REJECTED');
     });
 
-    it('should remove any value from v1 that is gte to max(v2)', function() {
+    test('should remove any value from v1 that is gte to max(v2)', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 0, 10);
       config_addVarRange(config, 'B', 5, 9);
@@ -317,11 +321,11 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(0, 9));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(5, 9));
+      expect(space.vardoms[A]).toEqual(fixt_dom_range(0, 9));
+      expect(space.vardoms[B]).toEqual(fixt_dom_range(5, 9));
     });
 
-    it('should not remove SUP if both ranges end there', function() {
+    test('should not remove SUP if both ranges end there', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 0, 15);
       config_addVarRange(config, 'B', 5, 15);
@@ -332,11 +336,11 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(0, 15));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(5, 15));
+      expect(space.vardoms[A]).toEqual(fixt_dom_range(0, 15));
+      expect(space.vardoms[B]).toEqual(fixt_dom_range(5, 15));
     });
 
-    it('should not affect domains when v1 < v2', function() {
+    test('should not affect domains when v1 < v2', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 0, 10);
       config_addVarRange(config, 'B', 11, 15);
@@ -347,26 +351,29 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(0, 10));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(11, 15));
+      expect(space.vardoms[A]).toEqual(fixt_dom_range(0, 10));
+      expect(space.vardoms[B]).toEqual(fixt_dom_range(11, 15));
     });
 
-    it('should not affect overlapping ranges when min(v2) <= max(v1) < max(v2)', function() {
-      let config = config_create();
-      config_addVarRange(config, 'A', 0, 13);
-      config_addVarRange(config, 'B', 10, 15);
-      let space = space_createRoot();
-      space_initFromConfig(space, config);
+    test(
+      'should not affect overlapping ranges when min(v2) <= max(v1) < max(v2)',
+      () => {
+        let config = config_create();
+        config_addVarRange(config, 'A', 0, 13);
+        config_addVarRange(config, 'B', 10, 15);
+        let space = space_createRoot();
+        space_initFromConfig(space, config);
 
-      let A = config.allVarNames.indexOf('A');
-      let B = config.allVarNames.indexOf('B');
+        let A = config.allVarNames.indexOf('A');
+        let B = config.allVarNames.indexOf('B');
 
-      propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_range(0, 13));
-      expect(space.vardoms[B]).to.eql(fixt_dom_range(10, 15));
-    });
+        propagator_lteStepBare(space, config, A, B);
+        expect(space.vardoms[A]).toEqual(fixt_dom_range(0, 13));
+        expect(space.vardoms[B]).toEqual(fixt_dom_range(10, 15));
+      }
+    );
 
-    it('should reject if min(v1) > max(v2)', function() {
+    test('should reject if min(v1) > max(v2)', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 11, 15);
       config_addVarRange(config, 'B', 5, 8);
@@ -377,11 +384,11 @@ describe('fdo/propagators/lte.spec', function() {
       let B = config.allVarNames.indexOf('B');
 
       propagator_lteStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_empty());
-      expect(space.vardoms[B]).to.eql(fixt_dom_empty());
+      expect(space.vardoms[A]).toEqual(fixt_dom_empty());
+      expect(space.vardoms[B]).toEqual(fixt_dom_empty());
     });
 
-    it('should reduce v2 if v1 is solved and > min(v2)', function() {
+    test('should reduce v2 if v1 is solved and > min(v2)', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 8, 8);
       config_addVarRange(config, 'B', 5, 10);
@@ -396,7 +403,7 @@ describe('fdo/propagators/lte.spec', function() {
       fixt_domainEql(space.vardoms[B], fixt_dom_range(8, 10));
     });
 
-    it('should not change if v1 is solved and == min(v2)', function() {
+    test('should not change if v1 is solved and == min(v2)', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 7, 7);
       config_addVarRange(config, 'B', 7, 13);
@@ -412,13 +419,13 @@ describe('fdo/propagators/lte.spec', function() {
     });
   });
 
-  describe('with LOG', function() {
+  describe('with LOG', () => {
 
-    before(function() {
+    beforeAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_PROPSTEPS);
     });
 
-    it('should improve test coverage by enabling logging', function() {
+    test('should improve test coverage by enabling logging', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
       config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
@@ -430,22 +437,22 @@ describe('fdo/propagators/lte.spec', function() {
 
       propagator_lteStepBare(space, config, A, B);
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    it('propagator_ltStepWouldReject', function() {
+    test('propagator_ltStepWouldReject', () => {
       propagator_lteStepWouldReject(fixt_dom_solved(0), fixt_dom_solved(1));
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    it('propagator_gtStepWouldReject', function() {
+    test('propagator_gtStepWouldReject', () => {
       propagator_gteStepWouldReject(fixt_dom_solved(0), fixt_dom_solved(1));
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    after(function() {
+    afterAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_NONE);
     });
   });

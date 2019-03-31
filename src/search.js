@@ -1,23 +1,20 @@
 import {
-  LOG_FLAG_SEARCH,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
-} from '../../fdlib/src/helpers';
-import {
-  space_createClone,
-  space_updateUnsolvedVarList,
-  space_propagate,
-} from './space';
-import {
+  LOG_FLAG_SEARCH,
+  NO_SUCH_VALUE,
   domain__debug,
   domain_isSolved,
-} from '../../fdlib/src/domain';
-import distribution_getNextVarIndex from './distribution/var';
-import distribute_getNextDomainForVar from './distribution/value';
+} from 'fdlib';
 
-// BODY_START
+import {
+  space_createClone,
+  space_propagate,
+  space_updateUnsolvedVarList,
+} from './space';
+
+import { distribution_getNextVarIndex } from './distribution/var';
+import { distribute_getNextDomainForVar } from './distribution/value';
 
 /**
  * Depth first search.
@@ -40,15 +37,15 @@ import distribute_getNextDomainForVar from './distribution/value';
  * @param {Function} [dbgCallback] Call after each epoch until it returns false, then stop calling it.
  */
 function search_depthFirst(state, config, dbgCallback) {
-  let stack = state.stack;
+  let { stack } = state;
   let epochs = 0;
 
-  // the stack only contains stable spaces. the first space is not
+  // The stack only contains stable spaces. the first space is not
   // stable so we propagate it first and before putting it on the stack.
-  let isStart = !stack || stack.length === 0;
+  const isStart = !stack || stack.length === 0;
   if (isStart) {
     if (!stack) stack = state.stack = [];
-    let solved = search_depthFirstLoop(state.space, config, stack, state);
+    const solved = search_depthFirstLoop(state.space, config, stack, state);
     if (dbgCallback && dbgCallback(++epochs)) dbgCallback = undefined;
     if (solved) return;
   }
@@ -56,20 +53,20 @@ function search_depthFirst(state, config, dbgCallback) {
   while (stack.length > 0 && !config.aborted) {
     ASSERT_LOG(LOG_FLAG_SEARCH, log => log(''));
     ASSERT_LOG(LOG_FLAG_SEARCH, log => log(''));
-    // take the top space and generate the next offspring, if any
-    let childSpace = search_createNextSpace(stack[stack.length - 1], config);
+    // Take the top space and generate the next offspring, if any
+    const childSpace = search_createNextSpace(stack[stack.length - 1], config);
     if (childSpace) {
-      // stabilize the offspring and put it on the stack
-      let solved = search_depthFirstLoop(childSpace, config, stack, state);
+      // Stabilize the offspring and put it on the stack
+      const solved = search_depthFirstLoop(childSpace, config, stack, state);
       if (dbgCallback && dbgCallback(++epochs)) dbgCallback = undefined;
       if (solved) return;
     } else {
-      // remove the space, it has no more children. this is a dead end.
+      // Remove the space, it has no more children. this is a dead end.
       stack.pop();
     }
   }
 
-  // there are no more spaces to explore and therefor no further solutions to be found.
+  // There are no more spaces to explore and therefor no further solutions to be found.
   state.status = 'end';
   state.more = false;
 }
@@ -85,10 +82,29 @@ function search_depthFirst(state, config, dbgCallback) {
  */
 function search_depthFirstLoop(space, config, stack, state) {
   ASSERT_LOG(LOG_FLAG_SEARCH, log => log('search_depthFirstLoop; next space'));
-  ASSERT_LOG(LOG_FLAG_SEARCH, log => log('  -', (Math.min(10, space.vardoms.length)) + '/' + space.vardoms.length, 'domains:', space.vardoms.slice(0, 10).map(domain__debug).join(', ')));
-  ASSERT_LOG(LOG_FLAG_SEARCH, log => log('  - updated var index:', space.updatedVarIndex < 0 ? 'root space so check all' : space.updatedVarIndex));
-  let rejected = space_propagate(space, config);
-  ASSERT_LOG(LOG_FLAG_SEARCH, log => log('search_depthFirstLoop; did space_propagate reject?', rejected));
+  ASSERT_LOG(LOG_FLAG_SEARCH, log =>
+    log(
+      '  -',
+      Math.min(10, space.vardoms.length) + '/' + space.vardoms.length,
+      'domains:',
+      space.vardoms
+        .slice(0, 10)
+        .map(domain__debug)
+        .join(', ')
+    )
+  );
+  ASSERT_LOG(LOG_FLAG_SEARCH, log =>
+    log(
+      '  - updated var index:',
+      space.updatedVarIndex < 0
+        ? 'root space so check all'
+        : space.updatedVarIndex
+    )
+  );
+  const rejected = space_propagate(space, config);
+  ASSERT_LOG(LOG_FLAG_SEARCH, log =>
+    log('search_depthFirstLoop; did space_propagate reject?', rejected)
+  );
 
   if (rejected) {
     ASSERT_LOG(LOG_FLAG_SEARCH, log => log(' ##  REJECTED'));
@@ -118,16 +134,16 @@ function search_afterPropagation(rejected, space, config, stack, state) {
     return false;
   }
 
-  let solved = space_updateUnsolvedVarList(space, config);
+  const solved = space_updateUnsolvedVarList(space, config);
   if (solved) {
     _search_onSolve(state, space, stack);
     return true;
   }
 
-  // put on the stack so the next loop can branch off it
+  // Put on the stack so the next loop can branch off it
   stack.push(space);
 
-  return undefined; // neither solved nor rejected
+  return undefined; // Neither solved nor rejected
 }
 
 /**
@@ -143,17 +159,22 @@ function search_afterPropagation(rejected, space, config, stack, state) {
  * @returns {$space|undefined} a clone with small modification or nothing if this is an unsolved leaf node
  */
 function search_createNextSpace(space, config) {
-  let varIndex = distribution_getNextVarIndex(space, config);
+  const varIndex = distribution_getNextVarIndex(space, config);
   ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(varIndex >= 0, 'VAR_INDEX_SHOULD_BE_POSITIVE');
 
   if (varIndex !== NO_SUCH_VALUE) {
-    let domain = space.vardoms[varIndex];
+    const domain = space.vardoms[varIndex];
     if (!domain_isSolved(domain)) {
-      let choice = space.next_distribution_choice++;
-      let nextDomain = distribute_getNextDomainForVar(space, config, varIndex, choice);
+      const choice = space.next_distribution_choice++;
+      const nextDomain = distribute_getNextDomainForVar(
+        space,
+        config,
+        varIndex,
+        choice
+      );
       if (nextDomain) {
-        let clone = space_createClone(space);
+        const clone = space_createClone(space);
         clone.updatedVarIndex = varIndex;
         clone.vardoms[varIndex] = nextDomain;
         return clone;
@@ -161,7 +182,7 @@ function search_createNextSpace(space, config) {
     }
   }
 
-  // space is an unsolved leaf node, return undefined
+  // Space is an unsolved leaf node, return undefined
 }
 
 /**
@@ -187,14 +208,8 @@ function _search_onReject(state, space, stack) {
  */
 function _search_onSolve(state, space, stack) {
   state.status = 'solved';
-  state.space = space; // is this so the solution can be read from it?
+  state.space = space; // Is this so the solution can be read from it?
   state.more = stack.length > 0;
 }
 
-// BODY_STOP
-
-export default search_depthFirst;
-export {
-  search_afterPropagation,
-  search_createNextSpace,
-};
+export { search_afterPropagation, search_createNextSpace, search_depthFirst };

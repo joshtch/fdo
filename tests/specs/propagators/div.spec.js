@@ -1,17 +1,17 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   fixt_arrdom_range,
   fixt_arrdom_ranges,
-} from '../../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 
 import {
-  LOG_FLAG_PROPSTEPS,
-  LOG_FLAG_NONE,
   SUB,
   SUP,
-
+} from 'fdlib';
+import {
   ASSERT_SET_LOG,
-} from '../../../../fdlib/src/helpers';
+  LOG_FLAG_PROPSTEPS,
+  LOG_FLAG_NONE,
+} from 'fdlib';
 
 import {
   config_create,
@@ -22,18 +22,18 @@ import {
   space_initFromConfig,
 } from '../../../src/space';
 
-import propagator_divStep from '../../../src/propagators/div';
+import { propagator_divStep } from '../../../src/propagators/div';
 
-describe('fdo/propagators/div.spec', function() {
+describe('fdo/propagators/div.spec', () => {
   // in general after call v3 = v1 / v2 should be equal
 
-  describe('with LOG', function() {
+  describe('with LOG', () => {
 
-    before(function() {
+    beforeAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_PROPSTEPS);
     });
 
-    it('should improve test coverage by enabling logging', function() {
+    test('should improve test coverage by enabling logging', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
       config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
@@ -47,18 +47,18 @@ describe('fdo/propagators/div.spec', function() {
 
       propagator_divStep(space, config, A, B, C);
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    after(function() {
+    afterAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_NONE);
     });
   });
 
-  describe('propagator_divStep', function() {
+  describe('propagator_divStep', () => {
 
-    it('should exist', function() {
-      expect(propagator_divStep).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof propagator_divStep).toBe('function');
     });
   });
 

@@ -4,4 +4,4 @@
 */
 
 !src/**/*
-!dist/fdo.dist.min.js
+!dist/fdo.min.js

@@ -1,52 +1,48 @@
 import {
   ASSERT,
+  domain_invMul,
+  domain_minus,
+  domain_mul,
+  domain_plus,
   THROW,
-} from '../../fdlib/src/helpers';
+} from 'fdlib';
 
-import {
-  config_addPropagator,
-  config_addVarAnonNothing,
-} from './config';
+import { config_addPropagator, config_addVarAnonNothing } from './config';
 
-import propagator_markovStepBare from './propagators/markov';
-import propagator_reifiedStepBare from './propagators/reified';
-import propagator_ringStepBare from './propagators/ring';
-import propagator_minStep from './propagators/min';
-import propagator_mulStep from './propagators/mul';
-import propagator_divStep from './propagators/div';
+import { propagator_divStep } from './propagators/div';
+import { propagator_markovStepBare } from './propagators/markov';
+import { propagator_minStep } from './propagators/min';
+import { propagator_mulStep } from './propagators/mul';
+import { propagator_reifiedStepBare } from './propagators/reified';
+import { propagator_ringStepBare } from './propagators/ring';
+
 import {
   propagator_gtStepBare,
   propagator_gtStepWouldReject,
   propagator_ltStepBare,
   propagator_ltStepWouldReject,
 } from './propagators/lt';
+
 import {
   propagator_gteStepBare,
   propagator_gteStepWouldReject,
   propagator_lteStepBare,
   propagator_lteStepWouldReject,
 } from './propagators/lte';
+
 import {
   propagator_eqStepBare,
   propagator_eqStepWouldReject,
 } from './propagators/eq';
+
 import {
   propagator_neqStepBare,
   propagator_neqStepWouldReject,
 } from './propagators/neq';
-import {
-  //domain__debug,
-  domain_invMul,
-  domain_minus,
-  domain_mul,
-  domain_plus,
-} from '../../fdlib/src/domain';
-
-// BODY_START
 
 /**
  * @param {string} name
- * @param {Function} stepFunc
+ * @param {Function} stepper
  * @param {number} index1
  * @param {number} [index2=-1]
  * @param {number} [index3=-1]
@@ -58,20 +54,32 @@ import {
  * @param {string} [arg6='']
  * @returns {$propagator}
  */
-function propagator_create(name, stepFunc, index1, index2, index3, arg1, arg2, arg3, arg4, arg5, arg6) {
+function propagator_create(
+  name,
+  stepper,
+  index1 = -1,
+  index2 = -1,
+  index3 = -1,
+  arg1 = '',
+  arg2 = '',
+  arg3 = '',
+  arg4 = '',
+  arg5 = '',
+  arg6 = ''
+) {
   return {
     _class: '$propagator',
-    name: name,
-    stepper: stepFunc,
-    index1: index1 === undefined ? -1 : index1,
-    index2: index2 === undefined ? -1 : index2,
-    index3: index3 === undefined ? -1 : index3,
-    arg1: arg1 === undefined ? '' : arg1,
-    arg2: arg2 === undefined ? '' : arg2,
-    arg3: arg3 === undefined ? '' : arg3,
-    arg4: arg4 === undefined ? '' : arg4,
-    arg5: arg5 === undefined ? '' : arg5,
-    arg6: arg6 === undefined ? '' : arg6,
+    name,
+    stepper,
+    index1,
+    index2,
+    index3,
+    arg1,
+    arg2,
+    arg3,
+    arg4,
+    arg5,
+    arg6,
   };
 }
 
@@ -100,12 +108,30 @@ function propagator_create(name, stepFunc, index1, index2, index3, arg1, arg2, a
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addReified(config, opname, leftVarIndex, rightVarIndex, resultVarIndex) {
+function propagator_addReified(
+  config,
+  opname,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof opname === 'string', 'OP_SHOULD_BE_STRING');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
   let nopName;
   let opFunc;
@@ -148,16 +174,43 @@ function propagator_addReified(config, opname, leftVarIndex, rightVarIndex, resu
       break;
 
     case 'gt':
-      return propagator_addReified(config, 'lt', rightVarIndex, leftVarIndex, resultVarIndex);
+      return propagator_addReified(
+        config,
+        'lt',
+        rightVarIndex,
+        leftVarIndex,
+        resultVarIndex
+      );
 
     case 'gte':
-      return propagator_addReified(config, 'lte', rightVarIndex, leftVarIndex, resultVarIndex);
+      return propagator_addReified(
+        config,
+        'lte',
+        rightVarIndex,
+        leftVarIndex,
+        resultVarIndex
+      );
 
     default:
       THROW('UNKNOWN_REIFIED_OP');
   }
 
-  config_addPropagator(config, propagator_create('reified', propagator_reifiedStepBare, leftVarIndex, rightVarIndex, resultVarIndex, opFunc, nopFunc, opname, nopName, opRejectChecker, nopRejectChecker));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'reified',
+      propagator_reifiedStepBare,
+      leftVarIndex,
+      rightVarIndex,
+      resultVarIndex,
+      opFunc,
+      nopFunc,
+      opname,
+      nopName,
+      opRejectChecker,
+      nopRejectChecker
+    )
+  );
 }
 
 /**
@@ -173,10 +226,21 @@ function propagator_addReified(config, opname, leftVarIndex, rightVarIndex, resu
  */
 function propagator_addEq(config, leftVarIndex, rightVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('eq', propagator_eqStepBare, leftVarIndex, rightVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create('eq', propagator_eqStepBare, leftVarIndex, rightVarIndex)
+  );
 }
 
 /**
@@ -189,10 +253,21 @@ function propagator_addEq(config, leftVarIndex, rightVarIndex) {
  */
 function propagator_addLt(config, leftVarIndex, rightVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('lt', propagator_ltStepBare, leftVarIndex, rightVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create('lt', propagator_ltStepBare, leftVarIndex, rightVarIndex)
+  );
 }
 
 /**
@@ -216,10 +291,26 @@ function propagator_addGt(config, leftVarIndex, rightVarIndex) {
  */
 function propagator_addLte(config, leftVarIndex, rightVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('lte', propagator_lteStepBare, leftVarIndex, rightVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'lte',
+      propagator_lteStepBare,
+      leftVarIndex,
+      rightVarIndex
+    )
+  );
 }
 
 /**
@@ -228,13 +319,39 @@ function propagator_addLte(config, leftVarIndex, rightVarIndex) {
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addMul(config, leftVarIndex, rightVarIndex, resultVarIndex) {
+function propagator_addMul(
+  config,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('mul', propagator_mulStep, leftVarIndex, rightVarIndex, resultVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'mul',
+      propagator_mulStep,
+      leftVarIndex,
+      rightVarIndex,
+      resultVarIndex
+    )
+  );
 }
 
 /**
@@ -243,13 +360,39 @@ function propagator_addMul(config, leftVarIndex, rightVarIndex, resultVarIndex) 
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addDiv(config, leftVarIndex, rightVarIndex, resultVarIndex) {
+function propagator_addDiv(
+  config,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('div', propagator_divStep, leftVarIndex, rightVarIndex, resultVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'div',
+      propagator_divStep,
+      leftVarIndex,
+      rightVarIndex,
+      resultVarIndex
+    )
+  );
 }
 
 /**
@@ -273,10 +416,26 @@ function propagator_addGte(config, leftVarIndex, rightVarIndex) {
  */
 function propagator_addNeq(config, leftVarIndex, rightVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('neq', propagator_neqStepBare, leftVarIndex, rightVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'neq',
+      propagator_neqStepBare,
+      leftVarIndex,
+      rightVarIndex
+    )
+  );
 }
 
 /**
@@ -290,7 +449,7 @@ function propagator_addDistinct(config, varIndexes) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
 
   for (let i = 0; i < varIndexes.length; i++) {
-    let varIndex = varIndexes[i];
+    const varIndex = varIndexes[i];
     for (let j = 0; j < i; ++j) {
       propagator_addNeq(config, varIndex, varIndexes[j]);
     }
@@ -307,17 +466,59 @@ function propagator_addDistinct(config, varIndexes) {
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addRingPlusOrMul(config, targetOpName, invOpName, opFunc, nopFunc, leftVarIndex, rightVarIndex, resultVarIndex) {
+function propagator_addRingPlusOrMul(
+  config,
+  targetOpName,
+  invOpName,
+  opFunc,
+  nopFunc,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof targetOpName === 'string', 'OP_SHOULD_BE_STRING');
   ASSERT(typeof invOpName === 'string', 'INV_OP_SHOULD_BE_STRING');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
-  propagator_addRing(config, leftVarIndex, rightVarIndex, resultVarIndex, targetOpName, opFunc);
-  propagator_addRing(config, resultVarIndex, rightVarIndex, leftVarIndex, invOpName, nopFunc);
-  propagator_addRing(config, resultVarIndex, leftVarIndex, rightVarIndex, invOpName, nopFunc);
+  propagator_addRing(
+    config,
+    leftVarIndex,
+    rightVarIndex,
+    resultVarIndex,
+    targetOpName,
+    opFunc
+  );
+  propagator_addRing(
+    config,
+    resultVarIndex,
+    rightVarIndex,
+    leftVarIndex,
+    invOpName,
+    nopFunc
+  );
+  propagator_addRing(
+    config,
+    resultVarIndex,
+    leftVarIndex,
+    rightVarIndex,
+    invOpName,
+    nopFunc
+  );
 }
 
 /**
@@ -332,9 +533,16 @@ function propagator_addRing(config, A, B, C, opName, opFunc) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof A === 'number' && A >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', A);
   ASSERT(typeof B === 'number' && B >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', B);
-  ASSERT(typeof C === 'number' && C >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', C);
+  ASSERT(
+    typeof C === 'number' && C >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    C
+  );
 
-  config_addPropagator(config, propagator_create('ring', propagator_ringStepBare, A, B, C, opName, opFunc));
+  config_addPropagator(
+    config,
+    propagator_create('ring', propagator_ringStepBare, A, B, C, opName, opFunc)
+  );
 }
 
 /**
@@ -345,8 +553,22 @@ function propagator_addRing(config, A, B, C, opName, opFunc) {
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addPlus(config, leftVarIndex, rightVarIndex, resultVarIndex) {
-  propagator_addRingPlusOrMul(config, 'plus', 'min', domain_plus, domain_minus, leftVarIndex, rightVarIndex, resultVarIndex);
+function propagator_addPlus(
+  config,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
+  propagator_addRingPlusOrMul(
+    config,
+    'plus',
+    'min',
+    domain_plus,
+    domain_minus,
+    leftVarIndex,
+    rightVarIndex,
+    resultVarIndex
+  );
 }
 
 /**
@@ -355,13 +577,39 @@ function propagator_addPlus(config, leftVarIndex, rightVarIndex, resultVarIndex)
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addMin(config, leftVarIndex, rightVarIndex, resultVarIndex) {
+function propagator_addMin(
+  config,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof leftVarIndex === 'number' && leftVarIndex >= 0, 'LEFT_VAR_SHOULD_BE_VALID_INDEX', leftVarIndex);
-  ASSERT(typeof rightVarIndex === 'number' && rightVarIndex >= 0, 'RIGHT_VAR_SHOULD_BE_VALID_INDEX', rightVarIndex);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    typeof leftVarIndex === 'number' && leftVarIndex >= 0,
+    'LEFT_VAR_SHOULD_BE_VALID_INDEX',
+    leftVarIndex
+  );
+  ASSERT(
+    typeof rightVarIndex === 'number' && rightVarIndex >= 0,
+    'RIGHT_VAR_SHOULD_BE_VALID_INDEX',
+    rightVarIndex
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
-  config_addPropagator(config, propagator_create('min', propagator_minStep, leftVarIndex, rightVarIndex, resultVarIndex));
+  config_addPropagator(
+    config,
+    propagator_create(
+      'min',
+      propagator_minStep,
+      leftVarIndex,
+      rightVarIndex,
+      resultVarIndex
+    )
+  );
 }
 
 /**
@@ -372,8 +620,22 @@ function propagator_addMin(config, leftVarIndex, rightVarIndex, resultVarIndex) 
  * @param {number} rightVarIndex
  * @param {number} resultVarIndex
  */
-function propagator_addRingMul(config, leftVarIndex, rightVarIndex, resultVarIndex) {
-  propagator_addRingPlusOrMul(config, 'mul', 'div', domain_mul, domain_invMul, leftVarIndex, rightVarIndex, resultVarIndex);
+function propagator_addRingMul(
+  config,
+  leftVarIndex,
+  rightVarIndex,
+  resultVarIndex
+) {
+  propagator_addRingPlusOrMul(
+    config,
+    'mul',
+    'div',
+    domain_mul,
+    domain_invMul,
+    leftVarIndex,
+    rightVarIndex,
+    resultVarIndex
+  );
 }
 
 /**
@@ -386,10 +648,19 @@ function propagator_addRingMul(config, leftVarIndex, rightVarIndex, resultVarInd
  */
 function propagator_addSum(config, varIndexes, resultVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(varIndexes instanceof Array, 'varIndexes should be an array of var names', varIndexes);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', typeof resultVarIndex, resultVarIndex);
+  ASSERT(
+    Array.isArray(varIndexes),
+    'varIndexes should be an array of var names',
+    varIndexes
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    typeof resultVarIndex,
+    resultVarIndex
+  );
 
-  let len = varIndexes.length;
+  const len = varIndexes.length;
   switch (len) {
     case 0:
       THROW('SUM_REQUIRES_VARS');
@@ -402,13 +673,16 @@ function propagator_addSum(config, varIndexes, resultVarIndex) {
     case 2:
       propagator_addPlus(config, varIndexes[0], varIndexes[1], resultVarIndex);
       return undefined;
+
+    default:
+      break;
   }
 
   // "divide and conquer" ugh. feels like there is a better way to do this
   ASSERT(len > 2, 'expecting at least 3 elements in the list...', varIndexes);
 
   let t1;
-  let n = Math.floor(varIndexes.length / 2);
+  const n = Math.floor(varIndexes.length / 2);
   if (n > 1) {
     t1 = config_addVarAnonNothing(config);
     propagator_addSum(config, varIndexes.slice(0, n), t1);
@@ -416,7 +690,7 @@ function propagator_addSum(config, varIndexes, resultVarIndex) {
     t1 = varIndexes[0];
   }
 
-  let t2 = config_addVarAnonNothing(config);
+  const t2 = config_addVarAnonNothing(config);
   propagator_addSum(config, varIndexes.slice(n), t2);
   propagator_addPlus(config, t1, t2, resultVarIndex);
 }
@@ -431,8 +705,16 @@ function propagator_addSum(config, varIndexes, resultVarIndex) {
  */
 function propagator_addProduct(config, varIndexes, resultVarIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(varIndexes instanceof Array, 'varIndexes should be an array of var names', varIndexes);
-  ASSERT(typeof resultVarIndex === 'number' && resultVarIndex >= 0, 'RESULT_VAR_SHOULD_BE_VALID_INDEX', resultVarIndex);
+  ASSERT(
+    Array.isArray(varIndexes),
+    'varIndexes should be an array of var names',
+    varIndexes
+  );
+  ASSERT(
+    typeof resultVarIndex === 'number' && resultVarIndex >= 0,
+    'RESULT_VAR_SHOULD_BE_VALID_INDEX',
+    resultVarIndex
+  );
 
   switch (varIndexes.length) {
     case 0:
@@ -440,17 +722,25 @@ function propagator_addProduct(config, varIndexes, resultVarIndex) {
       return undefined;
 
     case 1:
-      // note: by putting the result var first we get
+      // Note: by putting the result var first we get
       // the var name back for it in case it's a number
       propagator_addEq(config, resultVarIndex, varIndexes[0]);
       return undefined;
 
     case 2:
-      propagator_addRingMul(config, varIndexes[0], varIndexes[1], resultVarIndex);
+      propagator_addRingMul(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        resultVarIndex
+      );
       return undefined;
+
+    default:
+      break;
   }
 
-  let n = Math.floor(varIndexes.length / 2);
+  const n = Math.floor(varIndexes.length / 2);
   let t1;
   if (n > 1) {
     t1 = config_addVarAnonNothing(config);
@@ -459,7 +749,7 @@ function propagator_addProduct(config, varIndexes, resultVarIndex) {
     t1 = varIndexes[0];
   }
 
-  let t2 = config_addVarAnonNothing(config);
+  const t2 = config_addVarAnonNothing(config);
   propagator_addProduct(config, varIndexes.slice(n), t2);
   propagator_addRingMul(config, t1, t2, resultVarIndex);
 }
@@ -470,12 +760,17 @@ function propagator_addProduct(config, varIndexes, resultVarIndex) {
  */
 function propagator_addMarkov(config, varIndex) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof varIndex === 'number' && varIndex >= 0, 'VAR_SHOULD_BE_VALID_INDEX', varIndex);
+  ASSERT(
+    typeof varIndex === 'number' && varIndex >= 0,
+    'VAR_SHOULD_BE_VALID_INDEX',
+    varIndex
+  );
 
-  config_addPropagator(config, propagator_create('markov', propagator_markovStepBare, varIndex));
+  config_addPropagator(
+    config,
+    propagator_create('markov', propagator_markovStepBare, varIndex)
+  );
 }
-
-// BODY_STOP
 
 export {
   propagator_addDistinct,
@@ -486,16 +781,15 @@ export {
   propagator_addLt,
   propagator_addLte,
   propagator_addMarkov,
+  propagator_addMin,
   propagator_addMul,
   propagator_addNeq,
   propagator_addPlus,
-  propagator_addMin,
   propagator_addProduct,
   propagator_addReified,
   propagator_addRingMul,
   propagator_addSum,
-
-  // for testing
+  // For testing
   propagator_addRing,
   propagator_addRingPlusOrMul,
 };

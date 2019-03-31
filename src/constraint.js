@@ -6,8 +6,6 @@
 // plus(plus(A,B), C) which in turn breaks down to 2x three propagators
 // for the plus.
 
-// BODY_START
-
 function constraint_create(name, varIndexes, param) {
   return {
     _class: '$constraint',
@@ -17,8 +15,4 @@ function constraint_create(name, varIndexes, param) {
   };
 }
 
-// BODY_STOP
-
-export {
-  constraint_create,
-};
+export { constraint_create };

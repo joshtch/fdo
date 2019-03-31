@@ -1,19 +1,13 @@
-// this is an import function for config
+// This is an import function for config
 // it converts a DSL string to a $config
 // see /docs/dsl.txt for syntax
 // see exporter.js to convert a config to this DSL
-import {
-  SUB,
-  SUP,
 
-  getTerm,
-} from '../../fdlib/src/helpers';
-import {
-  config_setOption,
-} from './config';
+import { SUB, SUP, getTerm } from 'fdlib';
+
+import { config_setOption } from './config';
+
 import FDO from './fdo';
-
-// BODY_START
 
 /**
  * @param {string} str
@@ -25,7 +19,7 @@ function importer_main(str, solver, _debug) {
   if (!solver) solver = new FDO();
 
   let pointer = 0;
-  let len = str.length;
+  const len = str.length;
 
   while (!isEof()) parseStatement();
 
@@ -34,23 +28,36 @@ function importer_main(str, solver, _debug) {
   function read() {
     return str[pointer];
   }
+
   function readD(delta) {
     return str[pointer + delta];
   }
+
   function skip() {
     ++pointer;
   }
+
   function is(c, desc) {
-    if (read() !== c) THROW('Expected ' + (desc ? desc + ' ' : '') + '`' + c + '`, found `' + read() + '`');
+    if (read() !== c)
+      THROW(
+        'Expected ' +
+          (desc ? desc + ' ' : '') +
+          '`' +
+          c +
+          '`, found `' +
+          read() +
+          '`'
+      );
     skip();
   }
 
   function skipWhitespaces() {
     while (pointer < len && isWhitespace(read())) skip();
   }
+
   function skipWhites() {
     while (!isEof()) {
-      let c = read();
+      const c = read();
       if (isWhite(c)) {
         skip();
       } else if (isComment(c)) {
@@ -60,22 +67,27 @@ function importer_main(str, solver, _debug) {
       }
     }
   }
+
   function isWhitespace(s) {
     return s === ' ' || s === '\t';
   }
+
   function isNewline(s) {
     return s === '\n' || s === '\r';
   }
+
   function isComment(s) {
     return s === '#';
   }
+
   function isWhite(s) {
     return isWhitespace(s) || isNewline(s);
   }
+
   function expectEol() {
     skipWhitespaces();
     if (pointer < len) {
-      let c = read();
+      const c = read();
       if (c === '#') {
         skipComment();
       } else if (isNewline(c)) {
@@ -85,17 +97,19 @@ function importer_main(str, solver, _debug) {
       }
     }
   }
+
   function atEol() {
     if (pointer >= len) return true;
-    let c = read();
+    const c = read();
     return c === '#' || isNewline(c);
   }
+
   function isEof() {
     return pointer >= len;
   }
 
   function parseStatement() {
-    // either:
+    // Either:
     // - start with colon: var decl
     // - start with hash: line comment
     // - empty: empty
@@ -103,16 +117,19 @@ function importer_main(str, solver, _debug) {
 
     skipWhites();
     switch (read()) {
-      case ':': return parseVar();
-      case '#': return skipComment();
-      case '@': return parseAtRule();
+      case ':':
+        return parseVar();
+      case '#':
+        return skipComment();
+      case '@':
+        return parseAtRule();
       default:
         if (!isEof()) return parseUndefConstraint();
     }
   }
 
   function parseVar() {
-    skip(); // is(':')
+    skip(); // Is(':')
     skipWhitespaces();
 
     let nameNames = parseIdentifier();
@@ -132,10 +149,10 @@ function importer_main(str, solver, _debug) {
       skipWhitespaces();
     }
 
-    let domain = parseDomain();
+    const domain = parseDomain();
     skipWhitespaces();
 
-    let mod = parseModifier();
+    const mod = parseModifier();
     expectEol();
 
     if (typeof nameNames === 'string') {
@@ -146,36 +163,48 @@ function importer_main(str, solver, _debug) {
   }
 
   function parseIdentifier() {
-    if (read() === '\'') return parseQuotedIdentifier();
-    else return parseUnquotedIdentifier();
+    if (read() === "'") return parseQuotedIdentifier();
+    return parseUnquotedIdentifier();
   }
 
   function parseQuotedIdentifier() {
-    is('\'', 'start of Quoted identifier');
+    is("'", 'start of Quoted identifier');
 
-    let start = pointer;
+    const start = pointer;
     let c = read();
-    while (!isEof() && !isNewline(c) && c !== '\'') {
+    while (!isEof() && !isNewline(c) && c !== "'") {
       skip();
       c = read();
     }
+
     if (isEof()) THROW('Quoted identifier must be closed');
     if (start === pointer) THROW('Expected to parse identifier, found none');
-    is('\'', 'end of Quoted identifier');
-    return str.slice(start, pointer - 1); // return unquoted ident
+    is("'", 'end of Quoted identifier');
+    return str.slice(start, pointer - 1); // Return unquoted ident
   }
 
   function parseUnquotedIdentifier() {
-    // anything terminated by whitespace
-    let start = pointer;
-    if (read() >= '0' && read() <= '9') THROW('Unquoted ident cant start with number');
+    // Anything terminated by whitespace
+    const start = pointer;
+    if (read() >= '0' && read() <= '9')
+      THROW('Unquoted ident cant start with number');
     while (!isEof() && isValidUnquotedIdentChar(read())) skip();
-    if (start === pointer) THROW('Expected to parse identifier, found none [' + read() + ']');
+    if (start === pointer)
+      THROW('Expected to parse identifier, found none [' + read() + ']');
     return str.slice(start, pointer);
   }
+
   function isValidUnquotedIdentChar(c) {
-    // meh. i syntactically dont care about unicode chars so if you want to use them i wont stop you here
-    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c === '_' || c === '$' || c === '-' || c > '~');
+    // Meh. i syntactically dont care about unicode chars so if you want to use them i wont stop you here
+    return (
+      (c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z') ||
+      (c >= '0' && c <= '9') ||
+      c === '_' ||
+      c === '$' ||
+      c === '-' ||
+      c > '~'
+    );
   }
 
   function parseDomain() {
@@ -186,12 +215,11 @@ function importer_main(str, solver, _debug) {
     // 25
     // (comma's optional and ignored)
 
-    let c = read();
+    const c = read();
 
     let domain;
     switch (c) {
       case '[':
-
         is('[', 'domain start');
         skipWhitespaces();
 
@@ -201,13 +229,14 @@ function importer_main(str, solver, _debug) {
           do {
             skip();
             skipWhitespaces();
-            let lo = parseNumber();
+            const lo = parseNumber();
             skipWhitespaces();
             if (read() === ',') {
               skip();
               skipWhitespaces();
             }
-            let hi = parseNumber();
+
+            const hi = parseNumber();
             skipWhitespaces();
             is(']', 'range-end');
             skipWhitespaces();
@@ -222,13 +251,14 @@ function importer_main(str, solver, _debug) {
         } else if (read() !== ']') {
           do {
             skipWhitespaces();
-            let lo = parseNumber();
+            const lo = parseNumber();
             skipWhitespaces();
             if (read() === ',') {
               skip();
               skipWhitespaces();
             }
-            let hi = parseNumber();
+
+            const hi = parseNumber();
             skipWhitespaces();
 
             domain.push(lo, hi);
@@ -241,7 +271,8 @@ function importer_main(str, solver, _debug) {
         }
 
         is(']', 'domain-end');
-        if (domain.length === 0) THROW('Empty domain [] in dsl, this problem will always reject');
+        if (domain.length === 0)
+          THROW('Empty domain [] in dsl, this problem will always reject');
         return domain;
 
       case '*':
@@ -257,24 +288,26 @@ function importer_main(str, solver, _debug) {
       case '6':
       case '7':
       case '8':
-      case '9':
-        let v = parseNumber();
+      case '9': {
+        const v = parseNumber();
         skipWhitespaces();
         return [v, v];
-    }
+      }
 
-    THROW('Expecting valid domain start, found `' + c + '`');
+      default:
+        THROW('Expecting valid domain start, found `' + c + '`');
+    }
   }
 
   function parseModifier() {
     if (read() !== '@') return;
     skip();
 
-    let mod = {};
+    const mod = {};
 
-    let start = pointer;
+    const start = pointer;
     while (read() >= 'a' && read() <= 'z') skip();
-    let stratName = str.slice(start, pointer);
+    const stratName = str.slice(start, pointer);
 
     switch (stratName) {
       case 'list':
@@ -305,7 +338,8 @@ function importer_main(str, solver, _debug) {
 
   function parseList(mod) {
     skipWhitespaces();
-    if (str.slice(pointer, pointer + 5) !== 'prio(') THROW('Expecting the priorities to follow the `@list`');
+    if (str.slice(pointer, pointer + 5) !== 'prio(')
+      THROW('Expecting the priorities to follow the `@list`');
     pointer += 5;
     mod.list = parseNumList();
     is(')', 'list end');
@@ -316,11 +350,15 @@ function importer_main(str, solver, _debug) {
       skipWhitespaces();
       if (str.slice(pointer, pointer + 7) === 'matrix(') {
         // TOFIX: there is no validation here. apply stricter and safe matrix parsing
-        let matrix = str.slice(pointer + 7, pointer = str.indexOf(')', pointer));
-        let code = 'return ' + matrix;
-        let func = Function(code); /* eslint no-new-func: "off" */
+        const matrix = str.slice(
+          pointer + 7,
+          (pointer = str.indexOf(')', pointer))
+        );
+        const code = 'return ' + matrix;
+        const func = new Function(code); /* eslint no-new-func: "off" */
         mod.matrix = func();
-        if (pointer === -1) THROW('The matrix must be closed by a `)` but did not find any');
+        if (pointer === -1)
+          THROW('The matrix must be closed by a `)` but did not find any');
       } else if (str.slice(pointer, pointer + 7) === 'legend(') {
         pointer += 7;
         mod.legend = parseNumList();
@@ -334,27 +372,28 @@ function importer_main(str, solver, _debug) {
       } else {
         break;
       }
+
       skip();
     }
   }
 
   function skipComment() {
-    is('#', 'comment start'); //is('#', 'comment hash');
+    is('#', 'comment start'); // Is('#', 'comment hash');
     while (!isEof() && !isNewline(read())) skip();
     if (!isEof()) skip();
   }
 
   function parseUndefConstraint() {
-    // parse a constraint that does not return a value itself
+    // Parse a constraint that does not return a value itself
 
     // first try to parse single value constraints without value like markov() and distinct()
     if (parseUexpr()) return;
 
-    // so the first value must be a value returning expr
-    let A = parseVexpr(); // returns a var name or a constant value
+    // So the first value must be a value returning expr
+    const A = parseVexpr(); // Returns a var name or a constant value
 
     skipWhitespaces();
-    let cop = parseCop();
+    const cop = parseCop();
     skipWhitespaces();
     switch (cop) {
       case '=':
@@ -386,7 +425,7 @@ function importer_main(str, solver, _debug) {
         break;
 
       case '&':
-        // force A and B to non-zero (artifact)
+        // Force A and B to non-zero (artifact)
         // (could easily be done at compile time)
         // for now we mul the args and force the result non-zero, this way neither arg can be zero
         // TODO: this could be made "safer" with more work; `(A/A)+(B/B) > 0` doesnt risk going oob, i think. and otherwise we could sum two ==?0 reifiers to equal 2. just relatively very expensive.
@@ -394,52 +433,65 @@ function importer_main(str, solver, _debug) {
         break;
 
       case '!&':
-        // nand is a nall with just two args...
+        // Nand is a nall with just two args...
         // it is the opposite from AND, and so is the implementation
         // (except since we can force to 0 instead of "nonzero" we can drop the eq wrapper)
         solver.mul(A, parseVexpr(), solver.num(0));
         break;
 
       case '|':
-        // force at least one of A and B to be non-zero (both is fine too)
+        // Force at least one of A and B to be non-zero (both is fine too)
         // if we add both args and check the result for non-zero then at least one arg must be non-zero
         solver.neq(solver.plus(A, parseVexpr()), solver.num(0));
         break;
 
       case '!|':
-        // unconditionally force A and B to zero
+        // Unconditionally force A and B to zero
         solver.eq(A, solver.num(0));
         solver.eq(parseVexpr(), solver.num(0));
         break;
 
       case '^':
-        // force A zero and B nonzero or A nonzero and B zero (anything else rejects)
+        // Force A zero and B nonzero or A nonzero and B zero (anything else rejects)
         // this is more tricky/expensive to implement than AND and OR...
         // x=A+B,x==A^x==B owait
         // (A==?0)+(B==?0)==1
-        solver.eq(solver.plus(solver.isEq(A, 0), solver.isEq(parseVexpr(), 0)), 1);
+        solver.eq(
+          solver.plus(solver.isEq(A, 0), solver.isEq(parseVexpr(), 0)),
+          1
+        );
         break;
 
       case '!^':
-        // xor means A and B both solve to zero or both to non-zero
+        // Xor means A and B both solve to zero or both to non-zero
         // (A==?0)==(B==?0)
-        solver.eq(solver.isEq(A, solver.num(0)), solver.isEq(parseVexpr(), solver.num(0)));
+        solver.eq(
+          solver.isEq(A, solver.num(0)),
+          solver.isEq(parseVexpr(), solver.num(0))
+        );
         break;
 
-      case '->':
+      case '->': {
         // I think this could be implemented in various ways
         // A -> B     =>    ((A !=? 0) <= (B !=? 0)) & ((B ==? 0) <= (A ==? 0))
         // (if A is nonzero then B must be nonzero, otherwise B can be anything. But also if B is zero then
         // A must be zero and otherwise A can be anything. They must both hold to simulate an implication.)
-        let B = parseVexpr();
+        const B = parseVexpr();
         // (A !=? 0) <= (B !=? 0))
-        solver.lte(solver.isNeq(A, solver.num(0)), solver.isNeq(B, solver.num(0)));
+        solver.lte(
+          solver.isNeq(A, solver.num(0)),
+          solver.isNeq(B, solver.num(0))
+        );
         // (B ==? 0) <= (A ==? 0)
-        solver.lte(solver.isEq(B, solver.num(0)), solver.isEq(A, solver.num(0)));
+        solver.lte(
+          solver.isEq(B, solver.num(0)),
+          solver.isEq(A, solver.num(0))
+        );
         break;
+      }
 
       case '!->':
-        // force A to nonzero and B to zero
+        // Force A to nonzero and B to zero
         solver.gt(A, solver.num(0));
         solver.eq(parseVexpr(), solver.num(0));
         break;
@@ -452,18 +504,18 @@ function importer_main(str, solver, _debug) {
   }
 
   function parseAssignment(C) {
-    // note: if FDO api changes this may return the wrong value...
+    // Note: if FDO api changes this may return the wrong value...
     // it should always return the "result var" var name or constant
     // (that would be C, but C may be undefined here and created by FDO)
 
-    let freshVar = typeof C === 'string' && !solver.hasVar(C);
+    const freshVar = typeof C === 'string' && !solver.hasVar(C);
     if (freshVar) C = solver.decl(C);
 
-    let A = parseVexpr(C, freshVar);
+    const A = parseVexpr(C, freshVar);
     skipWhitespaces();
-    let c = read();
+    const c = read();
     if (isEof() || isNewline(c) || isComment(c)) {
-      // any group without "top-level" op (`A=(B+C)`), or sum() etc
+      // Any group without "top-level" op (`A=(B+C)`), or sum() etc
       // but also something like `x = 5` (which we cant detect here)
       // so just to make sure those cases dont fall through add an
       // extra eq. this should resolve immediately without change to
@@ -471,11 +523,12 @@ function importer_main(str, solver, _debug) {
       solver.eq(A, C);
       return A;
     }
+
     return parseAssignRest(A, C, freshVar);
   }
 
   function parseAssignRest(A, C, freshVar) {
-    let rop = parseRop();
+    const rop = parseRop();
     skipWhitespaces();
     switch (rop) {
       case '==?':
@@ -517,7 +570,8 @@ function importer_main(str, solver, _debug) {
       case '/':
         return solver.div(A, parseVexpr(), C);
       default:
-        if (rop !== undefined) THROW('Expecting right paren or rop, got: `' + rop + '`');
+        if (rop !== undefined)
+          THROW('Expecting right paren or rop, got: `' + rop + '`');
         return A;
     }
   }
@@ -531,6 +585,7 @@ function importer_main(str, solver, _debug) {
           skip();
           return '==';
         }
+
         return '=';
       case '!':
         skip();
@@ -539,23 +594,28 @@ function importer_main(str, solver, _debug) {
           skip();
           return '!=';
         }
+
         if (c === '&') {
           skip();
           return '!&';
         }
+
         if (c === '^') {
           skip();
           return '!^';
         }
+
         if (c === '|') {
           skip();
           return '!|';
         }
+
         if (c === '-' && readD(1) === '>') {
           skip();
           skip();
           return '!->';
         }
+
         return '!';
       case '<':
         skip();
@@ -563,6 +623,7 @@ function importer_main(str, solver, _debug) {
           skip();
           return '<=';
         }
+
         return '<';
       case '>':
         skip();
@@ -570,6 +631,7 @@ function importer_main(str, solver, _debug) {
           skip();
           return '>=';
         }
+
         return '>';
       case '&':
       case '|':
@@ -585,25 +647,30 @@ function importer_main(str, solver, _debug) {
           skip();
           return '->';
         }
+
+        break;
+      default:
         break;
     }
+
     if (isEof()) THROW('Expected to parse a cop but reached eof instead');
     THROW('Unknown cop char: `' + c + '`');
   }
 
   function parseRop() {
-    let a = read();
+    const a = read();
     switch (a) {
-      case '=':
+      case '=': {
         skip();
-        let b = read();
+        const b = read();
         if (b === '=') {
           skip();
           is('?', 'reifier suffix');
           return '==?';
-        } else {
-          return '=';
         }
+
+        return '=';
+      }
 
       case '!':
         skip();
@@ -611,18 +678,22 @@ function importer_main(str, solver, _debug) {
           is('=', 'middle part of !=? op');
           is('?', 'reifier suffix');
           return '!=?';
-        } else if (read() === '|') {
+        }
+
+        if (read() === '|') {
           is('|', 'middle part of !|? op');
           is('?', 'reifier suffix');
           return '!|?';
-        } else if (read() === '&') {
+        }
+
+        if (read() === '&') {
           is('&', 'middle part of !&? op');
           is('?', 'reifier suffix');
           return '!&?';
-        } else {
-          THROW('invalid rop char after ! [' + read() + ']');
-          break;
         }
+
+        THROW('invalid rop char after ! [' + read() + ']');
+        break;
 
       case '<':
         skip();
@@ -630,10 +701,10 @@ function importer_main(str, solver, _debug) {
           skip();
           is('?', 'reifier suffix');
           return '<=?';
-        } else {
-          is('?', 'reifier suffix');
-          return '<?';
         }
+
+        is('?', 'reifier suffix');
+        return '<?';
 
       case '>':
         skip();
@@ -641,10 +712,10 @@ function importer_main(str, solver, _debug) {
           skip();
           is('?', 'reifier suffix');
           return '>=?';
-        } else {
-          is('?', 'reifier suffix');
-          return '>?';
         }
+
+        is('?', 'reifier suffix');
+        return '>?';
 
       case '|':
         skip();
@@ -668,7 +739,7 @@ function importer_main(str, solver, _debug) {
   }
 
   function parseUexpr() {
-    // it's not very efficient (we could parse an ident before and check that result here) but it'll work for now
+    // It's not very efficient (we could parse an ident before and check that result here) but it'll work for now
     if (str.slice(pointer, pointer + 4) === 'all(') parseAll();
     else if (str.slice(pointer, pointer + 9) === 'distinct(') parseDistinct(9);
     else if (str.slice(pointer, pointer + 5) === 'diff(') parseDistinct(5);
@@ -683,10 +754,10 @@ function importer_main(str, solver, _debug) {
   }
 
   function parseVexpList() {
-    let list = [];
+    const list = [];
     skipWhitespaces();
     while (!isEof() && read() !== ')') {
-      let v = parseVexpr();
+      const v = parseVexpr();
       list.push(v);
 
       skipWhitespaces();
@@ -695,24 +766,25 @@ function importer_main(str, solver, _debug) {
         skipWhitespaces();
       }
     }
+
     return list;
   }
 
   function parseVexpr(resultVar, freshVar) {
-    // valcall, ident, number, group
+    // Valcall, ident, number, group
 
-    let c = read();
+    const c = read();
     let v;
     if (c === '(') v = parseGrouping();
     else if (c === '[') {
-      let d = parseDomain();
+      const d = parseDomain();
       if (d[0] === d[1] && d.length === 2) v = d[0];
       else v = solver.decl(undefined, d);
     } else if (c >= '0' && c <= '9') {
       v = parseNumber();
     } else {
-      let ident = parseIdentifier();
-      let d = read();
+      const ident = parseIdentifier();
+      const d = read();
       if (ident === 'sum' && d === '(') {
         v = parseSum(resultVar);
       } else if (ident === 'product' && d === '(') {
@@ -748,7 +820,7 @@ function importer_main(str, solver, _debug) {
   function parseGrouping() {
     is('(', 'group open');
     skipWhitespaces();
-    let A = parseVexpr();
+    const A = parseVexpr();
     skipWhitespaces();
 
     if (read() === '=') {
@@ -761,33 +833,42 @@ function importer_main(str, solver, _debug) {
     }
 
     if (read() === ')') {
-      // just wrapping a vexpr is okay
+      // Just wrapping a vexpr is okay
       skip();
       return A;
     }
 
-    let C = parseAssignRest(A);
+    const C = parseAssignRest(A);
     skipWhitespaces();
     is(')', 'group closer');
     return C;
   }
 
   function parseNumber() {
-    let start = pointer;
+    const start = pointer;
     while (read() >= '0' && read() <= '9') skip();
     if (start === pointer) {
-      THROW('Expecting to parse a number but did not find any digits [' + start + ',' + pointer + '][' + read() + ']');
+      THROW(
+        'Expecting to parse a number but did not find any digits [' +
+          start +
+          ',' +
+          pointer +
+          '][' +
+          read() +
+          ']'
+      );
     }
+
     return parseInt(str.slice(start, pointer), 10);
   }
 
   function parseAll() {
     pointer += 4;
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
     // R can only be 0 if (at least) one of the args is zero. so by removing
     // 0 from R's domain we require all args nonzero. cheap hack.
-    let r = solver.product(refs, solver.decl(undefined, [1, SUP]));
+    const r = solver.product(refs, solver.decl(undefined, [1, SUP]));
     skipWhitespaces();
     is(')', 'ALL closer');
     return r;
@@ -796,8 +877,8 @@ function importer_main(str, solver, _debug) {
   function parseDistinct(delta) {
     pointer += delta;
     skipWhitespaces();
-    let vals = parseVexpList();
-    if (!vals.length) THROW('Expecting at least one expression');
+    const vals = parseVexpList();
+    if (vals.length === 0) THROW('Expecting at least one expression');
     solver.distinct(vals);
     skipWhitespaces();
     is(')', 'distinct call closer');
@@ -807,8 +888,8 @@ function importer_main(str, solver, _debug) {
   function parseSum(result) {
     is('(', 'sum call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
-    let r = solver.sum(refs, result);
+    const refs = parseVexpList();
+    const r = solver.sum(refs, result);
     skipWhitespaces();
     is(')', 'sum closer');
     return r;
@@ -817,8 +898,8 @@ function importer_main(str, solver, _debug) {
   function parseProduct(result) {
     is('(', 'product call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
-    let r = solver.product(refs, result);
+    const refs = parseVexpList();
+    const r = solver.product(refs, result);
     skipWhitespaces();
     is(')', 'product closer');
     return r;
@@ -827,17 +908,18 @@ function importer_main(str, solver, _debug) {
   function parseIsAll(result) {
     is('(', 'isall call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
 
-    let r = compileIsall(result, refs);
+    const r = compileIsall(result, refs);
     skipWhitespaces();
     is(')', 'isall closer');
     return r;
   }
+
   function compileIsall(result, args) {
     // R = all?(A B C ...)   ->   X = A * B * C * ..., R = X !=? 0
 
-    let x = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
     solver.product(args, x);
     return solver.isNeq(x, solver.num(0), result);
   }
@@ -845,7 +927,7 @@ function importer_main(str, solver, _debug) {
   function parseIsDiff(result) {
     is('(', 'isdiff call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
 
     // R = diff?(A B C ...)
     // =>
@@ -855,12 +937,12 @@ function importer_main(str, solver, _debug) {
     // c = sum(Rxy ...)
     // R = c ==? argCount
 
-    let reifs = [];
+    const reifs = [];
 
     for (let i = 0; i < refs.length; ++i) {
-      let indexA = refs[i];
+      const indexA = refs[i];
       for (let j = i + 1; j < refs.length; ++j) {
-        let indexB = refs[j];
+        const indexB = refs[j];
         reifs.push(solver.isNeq(indexA, indexB));
       }
     }
@@ -875,8 +957,8 @@ function importer_main(str, solver, _debug) {
   function parseIsNall(result) {
     is('(', 'isnall call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
-    let r = compileIsnall(result, refs);
+    const refs = parseVexpList();
+    const r = compileIsnall(result, refs);
     skipWhitespaces();
     is(')', 'isnall closer');
     return r;
@@ -885,7 +967,7 @@ function importer_main(str, solver, _debug) {
   function compileIsnall(result, args) {
     // R = nall?(A B C ...)   ->   X = A * B * C * ..., R = X ==? 0
 
-    let x = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
     solver.product(args, x);
     return solver.isEq(x, solver.num(0), result);
   }
@@ -893,8 +975,8 @@ function importer_main(str, solver, _debug) {
   function parseIsNone(result) {
     is('(', 'isnone call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
-    let r = compileIsnone(result, refs);
+    const refs = parseVexpList();
+    const r = compileIsnone(result, refs);
     skipWhitespaces();
     is(')', 'isnone closer');
     return r;
@@ -903,7 +985,7 @@ function importer_main(str, solver, _debug) {
   function compileIsnone(result, args) {
     // R = none?(A B C ...)   ->   X = sum(A B C ...), R = X ==? 0
 
-    let x = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
     solver.sum(args, x);
     return solver.isEq(x, solver.num(0), result);
   }
@@ -911,21 +993,21 @@ function importer_main(str, solver, _debug) {
   function parseIsSame(result) {
     is('(', 'issame call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
 
     // R = same?(A B C ...)   ->   A==?B,B==?C,C==?..., sum(reifs) === reifs.length
 
-    let reifs = [];
+    const reifs = [];
     for (let i = 1; i < refs.length; ++i) {
-      let r = solver.decl(undefined, [0, 1]);
+      const r = solver.decl(undefined, [0, 1]);
       solver.isEq(refs[i - 1], refs[i], r);
       reifs.push(r);
     }
 
-    let x = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
     solver.sum(reifs, x);
 
-    let r = solver.isEq(x, solver.num(reifs.length), result);
+    const r = solver.isEq(x, solver.num(reifs.length), result);
 
     skipWhitespaces();
     is(')', 'issame closer');
@@ -935,16 +1017,17 @@ function importer_main(str, solver, _debug) {
   function parseIsSome(result) {
     is('(', 'issome call opener');
     skipWhitespaces();
-    let refs = parseVexpList();
-    let r = compileIssome(result, refs);
+    const refs = parseVexpList();
+    const r = compileIssome(result, refs);
     skipWhitespaces();
     is(')', 'issome closer');
     return r;
   }
+
   function compileIssome(result, args) {
     // R = some?(A B C ...)   ->   X = sum(A B C ...), R = X !=? 0
 
-    let x = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
     solver.sum(args, x);
     return solver.isNeq(x, solver.num(0), result);
   }
@@ -952,7 +1035,7 @@ function importer_main(str, solver, _debug) {
   function parseNall() {
     pointer += 5;
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
     // TODO: could also sum reifiers but i think this is way more efficient. for the time being.
     solver.product(refs, solver.num(0));
     skipWhitespaces();
@@ -963,8 +1046,8 @@ function importer_main(str, solver, _debug) {
   function parseNone() {
     pointer += 5;
     skipWhitespaces();
-    let refs = parseVexpList();
-    solver.sum(refs, solver.num(0)); // lazy way out but should resolve immediately anyways
+    const refs = parseVexpList();
+    solver.sum(refs, solver.num(0)); // Lazy way out but should resolve immediately anyways
     skipWhitespaces();
     is(')', 'none closer');
     expectEol();
@@ -973,10 +1056,11 @@ function importer_main(str, solver, _debug) {
   function parseSame() {
     pointer += 5;
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
     for (let i = 1; i < refs.length; ++i) {
       solver.eq(refs[i - 1], refs[i]);
     }
+
     skipWhitespaces();
     is(')', 'same closer');
     expectEol();
@@ -985,7 +1069,7 @@ function importer_main(str, solver, _debug) {
   function parseSome() {
     pointer += 5;
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
     solver.sum(refs, solver.decl(undefined, [1, SUP]));
     skipWhitespaces();
     is(')', 'some closer');
@@ -995,32 +1079,32 @@ function importer_main(str, solver, _debug) {
   function parseXnor() {
     pointer += 5;
     skipWhitespaces();
-    let refs = parseVexpList();
+    const refs = parseVexpList();
     skipWhitespaces();
     is(')', 'xnor() closer');
     expectEol();
 
-    // xnor(A B C)
+    // Xnor(A B C)
     // =>
     // x=X+B+C                  (if x is 0, all the args were zero: "none")
     // y=X*B*C                  (if y is not 0, none of the args were zero: "all")
     // (x==0) + (y!=0) == 1     (must all be zero or all be nonzero)
 
-    let x = solver.decl(); // anon var [sub,sup]
-    let y = solver.decl(); // anon var [sub,sup]
+    const x = solver.decl(); // Anon var [sub,sup]
+    const y = solver.decl(); // Anon var [sub,sup]
     solver.sum(refs, x);
     solver.product(refs, y);
     solver.plus(solver.isEq(x, 0), solver.isNeq(y, 0), 1);
   }
 
   function parseNumstr() {
-    let start = pointer;
+    const start = pointer;
     while (read() >= '0' && read() <= '9') skip();
     return str.slice(start, pointer);
   }
 
   function parseNumList() {
-    let nums = [];
+    const nums = [];
 
     skipWhitespaces();
     let numstr = parseNumstr();
@@ -1031,15 +1115,17 @@ function importer_main(str, solver, _debug) {
         ++pointer;
         skipWhitespaces();
       }
+
       numstr = parseNumstr();
     }
 
-    if (!nums.length) THROW('Expected to parse a list of at least some numbers but found none');
+    if (nums.length === 0)
+      THROW('Expected to parse a list of at least some numbers but found none');
     return nums;
   }
 
   function parseIdentList() {
-    let idents = [];
+    const idents = [];
 
     while (true) {
       skipWhitespaces();
@@ -1050,12 +1136,16 @@ function importer_main(str, solver, _debug) {
         skipWhitespaces();
         if (atEol()) THROW('Trailing comma not supported');
       }
+
       if (read() === ',') THROW('Double comma not supported');
-      let ident = parseIdentifier();
+      const ident = parseIdentifier();
       idents.push(ident);
     }
 
-    if (!idents.length) THROW('Expected to parse a list of at least some identifiers but found none');
+    if (idents.length === 0)
+      THROW(
+        'Expected to parse a list of at least some identifiers but found none'
+      );
     return idents;
   }
 
@@ -1065,23 +1155,25 @@ function importer_main(str, solver, _debug) {
       line += read();
       skip();
     }
+
     return line;
   }
 
   function parseAtRule() {
     is('@');
-    // mostly temporary hacks while the dsl stabilizes...
+    // Mostly temporary hacks while the dsl stabilizes...
 
     if (str.slice(pointer, pointer + 6) === 'custom') {
       pointer += 6;
       skipWhitespaces();
-      let ident = parseIdentifier();
+      const ident = parseIdentifier();
       skipWhitespaces();
       if (read() === '=') {
         skip();
         skipWhitespaces();
         if (read() === '=') THROW('Unexpected double eq sign');
       }
+
       switch (ident) {
         case 'var-strat':
           parseVarStrat();
@@ -1089,12 +1181,14 @@ function importer_main(str, solver, _debug) {
         case 'val-strat':
           parseValStrat();
           break;
-        case 'set-valdist':
+        case 'set-valdist': {
           skipWhitespaces();
-          let target = parseIdentifier();
-          let config = parseRestCustom();
+          const target = parseIdentifier();
+          const config = parseRestCustom();
           solver.setValueDistributionFor(target, JSON.parse(config));
           break;
+        }
+
         case 'targets':
           parseTargets();
           break;
@@ -1113,6 +1207,7 @@ function importer_main(str, solver, _debug) {
     } else {
       THROW('Unknown atrule');
     }
+
     expectEol();
   }
 
@@ -1128,8 +1223,8 @@ function importer_main(str, solver, _debug) {
 
     let fallback = false;
     if (read() === 'f') {
-      // inverted
-      let ident = parseIdentifier();
+      // Inverted
+      const ident = parseIdentifier();
       if (ident !== 'fallback') THROW('Expecting `fallback` here');
       fallback = true;
       skipWhitespaces();
@@ -1137,8 +1232,8 @@ function importer_main(str, solver, _debug) {
 
     let inverted = false;
     if (read() === 'i') {
-      // inverted
-      let ident = parseIdentifier();
+      // Inverted
+      const ident = parseIdentifier();
       if (ident !== 'inverted') THROW('Expecting `inverted` here');
       inverted = true;
       skipWhitespaces();
@@ -1146,15 +1241,28 @@ function importer_main(str, solver, _debug) {
 
     if (read() === 'l' || read() === '(') {
       if (read() === 'l') {
-        // list (optional keyword)
-        if (parseIdentifier() !== 'list') THROW('Unexpected ident after `inverted` (only expecting `list` or the list)');
+        // List (optional keyword)
+        if (parseIdentifier() !== 'list')
+          THROW(
+            'Unexpected ident after `inverted` (only expecting `list` or the list)'
+          );
         skipWhitespaces();
       }
 
       is('(');
-      let priorityByName = parseIdentList();
-      if (priorityByName.length) config_setOption(solver.config, fallback ? 'varStrategyFallback' : 'varStrategy', {type: 'list', inverted, priorityByName});
-      else config_setOption(solver.config, fallback ? 'varStrategyFallback' : 'varStrategy', {type: 'naive'});
+      const priorityByName = parseIdentList();
+      if (priorityByName.length > 0)
+        config_setOption(
+          solver.config,
+          fallback ? 'varStrategyFallback' : 'varStrategy',
+          { type: 'list', inverted, priorityByName }
+        );
+      else
+        config_setOption(
+          solver.config,
+          fallback ? 'varStrategyFallback' : 'varStrategy',
+          { type: 'naive' }
+        );
       skipWhitespaces();
       is(')');
     } else {
@@ -1163,17 +1271,30 @@ function importer_main(str, solver, _debug) {
         skipWhitespaces();
       }
 
-      if (inverted) THROW('The `inverted` keyword is only valid for a prio list');
-      // parse ident and use that as the vardist
-      let ident = parseIdentifier();
-      if (ident === 'list') THROW('Use a grouped list of idents for vardist=list');
-      if (ident !== 'naive' && ident !== 'size' && ident !== 'min' && ident !== 'max' && ident !== 'throw') THROW('Unknown var dist [' + ident + ']');
-      config_setOption(solver.config, fallback ? 'varStrategyFallback' : 'varStrategy', {type: ident});
+      if (inverted)
+        THROW('The `inverted` keyword is only valid for a prio list');
+      // Parse ident and use that as the vardist
+      const ident = parseIdentifier();
+      if (ident === 'list')
+        THROW('Use a grouped list of idents for vardist=list');
+      if (
+        ident !== 'naive' &&
+        ident !== 'size' &&
+        ident !== 'min' &&
+        ident !== 'max' &&
+        ident !== 'throw'
+      )
+        THROW('Unknown var dist [' + ident + ']');
+      config_setOption(
+        solver.config,
+        fallback ? 'varStrategyFallback' : 'varStrategy',
+        { type: ident }
+      );
     }
   }
 
   function parseValStrat() {
-    let name = parseIdentifier();
+    const name = parseIdentifier();
     expectEol();
     solver.config.valueStratName = name;
   }
@@ -1198,21 +1319,33 @@ function importer_main(str, solver, _debug) {
       is('(', 'ONLY_USE_WITH_SOME_TARGET_VARS');
       skipWhitespaces();
       if (read() === ',') THROW('Leading comma not supported');
-      let idents = parseIdentList();
-      if (idents.length) solver.config.targetedVars = idents;
+      const idents = parseIdentList();
+      if (idents.length > 0) solver.config.targetedVars = idents;
       is(')');
     }
   }
 
   function THROW(msg) {
     if (_debug) {
-      getTerm().log(str.slice(0, pointer) + '##|PARSER_IS_HERE[' + msg + ']|##' + str.slice(pointer));
+      getTerm().log(
+        str.slice(0, pointer) +
+          '##|PARSER_IS_HERE[' +
+          msg +
+          ']|##' +
+          str.slice(pointer)
+      );
     }
-    msg = 'Importer parser error: ' + msg + ', source at #|#: `' + str.slice(Math.max(0, pointer - 70), pointer) + '#|#' + str.slice(pointer, Math.min(str.length, pointer + 70)) + '`';
+
+    msg =
+      'Importer parser error: ' +
+      msg +
+      ', source at #|#: `' +
+      str.slice(Math.max(0, pointer - 70), pointer) +
+      '#|#' +
+      str.slice(pointer, Math.min(str.length, pointer + 70)) +
+      '`';
     throw new Error(msg);
   }
 }
 
-// BODY_STOP
-
-export default importer_main;
+export { importer_main };

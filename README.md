@@ -1,10 +1,15 @@
 # FDO - Only the Solver
 
-A finite domain [constraint solver](https://en.wikipedia.org/wiki/Constraint_logic_programming), forked from [finitedomain](https://github.com/the-grid/finitedomain), which in turn was originally based on [FD.js](https://github.com/srikumarks/FD.js/wiki/API).
+A finite domain [constraint
+solver](https://en.wikipedia.org/wiki/Constraint_logic_programming), forked from
+[finitedomain](https://github.com/the-grid/finitedomain), which in turn was originally based on
+[FD.js](https://github.com/srikumarks/FD.js/wiki/API).
 
-This package only contains the solver, which only brute force solves the problem. No attempts at optimization is done here.
+This package only contains the solver, which brute force solves the problem. No attempts
+at optimization are done here.
 
-Part of the [fdq](https://github.com/qfox/fdq) package. See its description for a complete overview of this suite and how to run tests and all that.
+Part of the [fdq](https://github.com/pvdz/fdq) package. See its description for a complete
+overview of this suite and how to run tests and all that.
 
 ## Installing
 
@@ -29,40 +34,41 @@ let solution = FDO.solve(`
 console.log(solution); // -> {A: 15}
 ```
 
-For the DSL syntax see the docs in [fdq](https://github.com/qfox/fdq).
+For the DSL syntax see the docs in [fdq](https://github.com/pvdz/fdq).
 
 ## Tasks
 
-There are a few grunt tasks and bash scripts hooked up to npm. This repo also uses git hooks for pre- and post commit hooks.
-
-As a general rule, `./build` is used for any temporary output, including code coverage reports and temporary build files when producing a dist.
-
-Then `./dist` only contains final builds (`./dist/fdo.dist.min.js` and for some tasks `./dist/fdo.js`).
-
-Note that both `./build` and `./dist` are cleared at the start of almost every (grunt) task.
+The npm package provides a CommonJS build (`/lib`) for use in Node.js, and with bundlers
+like Webpack and Browserify. It also includes an ES module build (`/es`) that works well
+with Rollup and Webpack2's tree-shaking.
 
 (These tasks obviously require an `npm install`)
 
-### Grunt tasks:
+### Builds
 
-- `grunt clean`: removes `./dist` and `./build`
-- `grunt build`: a direct alias for `dist`
-- `grunt dist`: lint, test, build, and minify to produce a real dist build
-- `grunt distq`: create a dist but skip linting, testing, and code coverage. Also produces a copy in `./dist/fdp.js`
-- `grunt distbug`: creates a build without removing test artifacts or minification. In case you need proper stack traces in other projects.
-- `grunt distheat`: creates a dist but instead of minification as the last step it beautifies. Used for [HeatFiler](https://qfox.github.io/heatfiler/src/index.html), a count based heatmap profiler. Copies to `fdp.js`.
-- `grunt coverage`: runs all tests in the code coverage tool
-- `grunt test`: runs linting and all tests
-- `grunt testq`: runs tests without linting
-- `grunt testtb`: testq but fail fast
-- `grunt watch:q`: runs `distq` whenever a file changes
-- `grunt watch:h`: runs `distheat` whenever a file changes
-- `grunt watch:b`: runs `distbug` whenever a file changes
-- `grunt watch:t`: runs `testq` whenever a file changes
-- `grunt watch:tb`: runs `testtb` whenever a file changes
+ -  `npm run build:commonjs`: Build CommonJS to `/lib` in the project root.
+
+ -  `npm run build:esm`: Same as previous, but for ES module build to `/es`.
+
+ -  `npm run build:umd`: Ditto for UMD build to `/dist/fdo.min.js`.
+
+ -  `npm run build`: Run all of the above builds.
 
 ### Bash / npm scripts:
 
-- `npm run lint`: run eslint with dist config (slightly stricter than dev). Exits non-zero if it fails.
-- `npm run lintdev`: run eslint with dev config (allows `console.log`, `debugger`, etc). No non-zero exit for failures.
-- `npm run lintfix`: runs eslint in the fix mode
+ - `npm run lint`: Lint project files.
+
+ - `npm run format:check`: Check JavaScript and Markdown for style and report problems
+   to `stdout`.
+
+ - `npm run format`: Check coding style as in `format:check` and automatically apply fixes
+   where possible.
+
+ - `npm run coverage`: Show a breakdown of test suite code coverage.
+
+ - `npm run test`: Run all tests once.
+
+ - `npm run test:update`: Run all tests once, updating snapshots as needed.
+
+ - `npm run test:watch`: Run tests whenever files are modified.
+

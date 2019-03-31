@@ -1,24 +1,20 @@
-import {
-  THROW,
-} from '../../../fdlib/src/helpers';
-
-// BODY_START
+import { THROW } from 'fdlib';
 
 const PRESETS = {
   defaults: {
-    varStrategy: {type: 'naive'},
+    varStrategy: { type: 'naive' },
     valueStrategy: 'min',
   },
   // The native distribution strategy simply steps through all
   // undetermined variables.
   naive: {
-    varStrategy: {type: 'naive'},
+    varStrategy: { type: 'naive' },
     valueStrategy: 'min',
   },
   // The "fail first" strategy branches on the variable with the
   // smallest domain size.
   fail_first: {
-    varStrategy: {type: 'size'},
+    varStrategy: { type: 'size' },
     valueStrategy: 'min',
   },
   // The "domain splitting" strategy where each domain is roughly
@@ -26,7 +22,7 @@ const PRESETS = {
   // single var name or an array of names or an object whose
   // values are var names.
   split: {
-    varStrategy: {type: 'size'},
+    varStrategy: { type: 'size' },
     valueStrategy: 'splitMin',
   },
 };
@@ -37,6 +33,4 @@ function distribution_getDefaults(name) {
   THROW(`distribution.get_defaults: Unknown preset: ${name}`);
 }
 
-// BODY_STOP
-
-export default distribution_getDefaults;
+export { distribution_getDefaults };

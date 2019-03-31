@@ -1,15 +1,11 @@
 import {
   ASSERT,
   ASSERT_NORDOM,
-  THROW,
-} from '../../../fdlib/src/helpers';
-import {
   domain_max,
   domain_min,
   domain_size,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+  THROW,
+} from 'fdlib';
 
 const BETTER = 1;
 const SAME = 2;
@@ -21,13 +17,18 @@ const WORSE = 3;
  *
  * @param {$space} space
  * @param {$config} config
- * @returns {number}
+ * @return {number}
  */
 function distribution_getNextVarIndex(space, config) {
-  let varStratConfig = config.varStratConfig;
-  let isBetterVarFunc = distribution_getFunc(varStratConfig.type);
+  const { varStratConfig } = config;
+  const isBetterVarFunc = distribution_getFunc(varStratConfig.type);
 
-  let varIndex = _distribution_varFindBest(space, config, isBetterVarFunc, varStratConfig);
+  const varIndex = _distribution_varFindBest(
+    space,
+    config,
+    isBetterVarFunc,
+    varStratConfig
+  );
   return varIndex;
 }
 
@@ -67,18 +68,28 @@ function distribution_getFunc(distName) {
  */
 function _distribution_varFindBest(space, config, fitnessFunc, varStratConfig) {
   let i = 0;
-  let unsolvedVarIndexes = space._unsolved;
-  ASSERT(unsolvedVarIndexes.length, 'there should be unsolved vars left to pick (caller should ensure this)');
+  const unsolvedVarIndexes = space._unsolved;
+  ASSERT(
+    unsolvedVarIndexes.length,
+    'there should be unsolved vars left to pick (caller should ensure this)'
+  );
 
   let bestVarIndex = unsolvedVarIndexes[i++];
 
   if (fitnessFunc) {
     for (let len = unsolvedVarIndexes.length; i < len; i++) {
-      let varIndex = unsolvedVarIndexes[i];
+      const varIndex = unsolvedVarIndexes[i];
       ASSERT(typeof varIndex === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
-      ASSERT(space.vardoms[varIndex] !== undefined, 'expecting each varIndex to have an domain', varIndex);
+      ASSERT(
+        space.vardoms[varIndex] !== undefined,
+        'expecting each varIndex to have an domain',
+        varIndex
+      );
 
-      if (BETTER === fitnessFunc(space, config, varIndex, bestVarIndex, varStratConfig)) {
+      if (
+        BETTER ===
+        fitnessFunc(space, config, varIndex, bestVarIndex, varStratConfig)
+      ) {
         bestVarIndex = varIndex;
       }
     }
@@ -89,16 +100,18 @@ function _distribution_varFindBest(space, config, fitnessFunc, varStratConfig) {
   return bestVarIndex;
 }
 
-//#####
+// #####
 // preset fitness functions
-//#####
+// #####
 
 function distribution_varByMinSize(space, config, varIndex1, varIndex2) {
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex1 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
 
-  let n = domain_size(space.vardoms[varIndex1]) - domain_size(space.vardoms[varIndex2]);
+  const n =
+    domain_size(space.vardoms[varIndex1]) -
+    domain_size(space.vardoms[varIndex2]);
   if (n < 0) return BETTER;
   if (n > 0) return WORSE;
   return SAME;
@@ -110,9 +123,13 @@ function distribution_varByMin(space, config, varIndex1, varIndex2) {
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT_NORDOM(space.vardoms[varIndex1]);
   ASSERT_NORDOM(space.vardoms[varIndex2]);
-  ASSERT(space.vardoms[varIndex1] && space.vardoms[varIndex2], 'EXPECTING_NON_EMPTY');
+  ASSERT(
+    space.vardoms[varIndex1] && space.vardoms[varIndex2],
+    'EXPECTING_NON_EMPTY'
+  );
 
-  let n = domain_min(space.vardoms[varIndex1]) - domain_min(space.vardoms[varIndex2]);
+  const n =
+    domain_min(space.vardoms[varIndex1]) - domain_min(space.vardoms[varIndex2]);
   if (n < 0) return BETTER;
   if (n > 0) return WORSE;
   return SAME;
@@ -123,71 +140,98 @@ function distribution_varByMax(space, config, varIndex1, varIndex2) {
   ASSERT(typeof varIndex1 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
 
-  let n = domain_max(space.vardoms[varIndex1]) - domain_max(space.vardoms[varIndex2]);
+  const n =
+    domain_max(space.vardoms[varIndex1]) - domain_max(space.vardoms[varIndex2]);
   if (n > 0) return BETTER;
   if (n < 0) return WORSE;
   return SAME;
 }
 
-function distribution_varByMarkov(space, config, varIndex1, varIndex2, varStratConfig) {
+function distribution_varByMarkov(
+  space,
+  config,
+  varIndex1,
+  varIndex2,
+  varStratConfig
+) {
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex1 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
 
-  let distOptions = config.varDistOptions;
+  const distOptions = config.varDistOptions;
 
-  // v1 is only, but if so always, better than v2 if v1 is a markov var
+  // V1 is only, but if so always, better than v2 if v1 is a markov var
 
-  let varName1 = config.allVarNames[varIndex1];
+  const varName1 = config.allVarNames[varIndex1];
   ASSERT(typeof varName1 === 'string', 'VAR_NAME_SHOULD_BE_STRING');
   if (distOptions[varName1] && distOptions[varName1].valtype === 'markov') {
     return BETTER;
   }
 
-  let varName2 = config.allVarNames[varIndex2];
+  const varName2 = config.allVarNames[varIndex2];
   ASSERT(typeof varName2 === 'string', 'VAR_NAME_SHOULD_BE_STRING');
   if (distOptions[varName2] && distOptions[varName2].valtype === 'markov') {
     return WORSE;
   }
 
-  return distribution_varFallback(space, config, varIndex1, varIndex2, varStratConfig.fallback);
+  return distribution_varFallback(
+    space,
+    config,
+    varIndex1,
+    varIndex2,
+    varStratConfig.fallback
+  );
 }
 
-function distribution_varByList(space, config, varIndex1, varIndex2, varStratConfig) {
+function distribution_varByList(
+  space,
+  config,
+  varIndex1,
+  varIndex2,
+  varStratConfig
+) {
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex1 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
 
-  // note: config._priorityByIndex is compiled by FDO#prepare from given priorityByName
+  // Note: config._priorityByIndex is compiled by FDO#prepare from given priorityByName
   // if in the list, lowest prio can be 1. if not in the list, prio will be undefined
-  let hash = varStratConfig._priorityByIndex;
+  const hash = varStratConfig._priorityByIndex;
 
-  // if v1 or v2 is not in the list they will end up as undefined
-  let p1 = hash[varIndex1];
-  let p2 = hash[varIndex2];
+  // If v1 or v2 is not in the list they will end up as undefined
+  const p1 = hash[varIndex1];
+  const p2 = hash[varIndex2];
 
   ASSERT(p1 !== 0, 'SHOULD_NOT_USE_INDEX_ZERO');
   ASSERT(p2 !== 0, 'SHOULD_NOT_USE_INDEX_ZERO');
 
-  if (!p1 && !p2) { // neither has a priority
-    return distribution_varFallback(space, config, varIndex1, varIndex2, varStratConfig.fallback);
+  if (!p1 && !p2) {
+    // Neither has a priority
+    return distribution_varFallback(
+      space,
+      config,
+      varIndex1,
+      varIndex2,
+      varStratConfig.fallback
+    );
   }
 
-  // invert this operation? ("deprioritizing").
-  let inverted = varStratConfig.inverted;
+  // Invert this operation? ("deprioritizing").
+  const { inverted } = varStratConfig;
 
-  // if inverted being on the list makes it worse than not.
+  // If inverted being on the list makes it worse than not.
 
   if (!p2) {
     if (inverted) return WORSE;
     return BETTER;
   }
+
   if (!p1) {
     if (inverted) return BETTER;
     return WORSE;
   }
 
-  // the higher the p, the higher the prio. (the input array is compiled that way)
+  // The higher the p, the higher the prio. (the input array is compiled that way)
   // if inverted then low p is higher prio
 
   if (p1 > p2) {
@@ -200,7 +244,13 @@ function distribution_varByList(space, config, varIndex1, varIndex2, varStratCon
   return WORSE;
 }
 
-function distribution_varFallback(space, config, varIndex1, varIndex2, fallbackConfig) {
+function distribution_varFallback(
+  space,
+  config,
+  varIndex1,
+  varIndex2,
+  fallbackConfig
+) {
   ASSERT(space._class === '$space', 'SPACE_SHOULD_BE_SPACE');
   ASSERT(typeof varIndex1 === 'number', 'INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'INDEX_SHOULD_BE_NUMBER');
@@ -209,7 +259,7 @@ function distribution_varFallback(space, config, varIndex1, varIndex2, fallbackC
     return SAME;
   }
 
-  let distName = fallbackConfig.type;
+  const distName = fallbackConfig.type;
   switch (distName) {
     case 'size':
       return distribution_varByMinSize(space, config, varIndex1, varIndex2);
@@ -221,33 +271,42 @@ function distribution_varFallback(space, config, varIndex1, varIndex2, fallbackC
       return distribution_varByMax(space, config, varIndex1, varIndex2);
 
     case 'markov':
-      return distribution_varByMarkov(space, config, varIndex1, varIndex2, fallbackConfig);
+      return distribution_varByMarkov(
+        space,
+        config,
+        varIndex1,
+        varIndex2,
+        fallbackConfig
+      );
 
     case 'list':
-      return distribution_varByList(space, config, varIndex1, varIndex2, fallbackConfig);
+      return distribution_varByList(
+        space,
+        config,
+        varIndex1,
+        varIndex2,
+        fallbackConfig
+      );
 
     case 'throw':
       return THROW('nope');
-  }
 
-  return THROW(`Unknown var dist fallback name: ${distName}`);
+    default:
+      return THROW(`Unknown var dist fallback name: ${distName}`);
+  }
 }
 
-// BODY_STOP
-
-export default distribution_getNextVarIndex;
 export {
+  distribution_getNextVarIndex,
   BETTER,
   SAME,
   WORSE,
 
-  // __REMOVE_BELOW_FOR_DIST__
-  // for testing
+  // For testing
   distribution_varByList,
   distribution_varByMax,
   distribution_varByMarkov,
   distribution_varByMin,
   distribution_varByMinSize,
   distribution_varFallback,
-  // __REMOVE_ABOVE_FOR_DIST__
 };

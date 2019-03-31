@@ -34,12 +34,10 @@ Pet [birds | cats | dogs | fish | horses]
 
 */
 
-import expect from '../../../fdlib/tests/lib/mocha_proxy.fixt';
-
 import FDO from '../../src/fdo';
-import importer from '../../src/importer';
+import { importer } from '../../src/importer';
 
-describe('src/einstein.spec', function() {
+describe('src/einstein.spec', () => {
 
   function solutionFor(solution, varNames) {
     let result = {};
@@ -50,7 +48,7 @@ describe('src/einstein.spec', function() {
     return result;
   }
 
-  it('puzzle with api', function() {
+  test('puzzle with api', () => {
     let solver = new FDO();
 
     let H = [0, 1, 2, 3, 4];
@@ -160,7 +158,8 @@ describe('src/einstein.spec', function() {
 
     // we only care about solving the assignments of each property for each house (C0, P0, etc)
     solver.solve({_debug: 0, log: 1, max: 2, vars: [].concat(Cn, Nn, Dn, Sn, Pn)});
-    expect(solver.solutions.length, 'solution count').to.eql(1); // only has one solution
+    // solution count
+    expect(solver.solutions.length).toBe(1); // only has one solution
 
     /*
     from the website:
@@ -172,7 +171,7 @@ describe('src/einstein.spec', function() {
     */
 
     let s = solver.solutions[0];
-    expect(solutionFor(s, [].concat(Cn, Nn, Dn, Sn, Pn))).to.eql({
+    expect(solutionFor(s, [].concat(Cn, Nn, Dn, Sn, Pn))).toEqual({
       C0: s[yellow],
       D0: s[water],
       N0: s[Norwegian],
@@ -205,7 +204,7 @@ describe('src/einstein.spec', function() {
     });
   });
 
-  it('puzzle with dsl', function() {
+  test('puzzle with dsl', () => {
 
     const blue = 0;
     const green = 1;
@@ -423,10 +422,11 @@ describe('src/einstein.spec', function() {
     let outputVars = ['C0', 'C1', 'C2', 'C3', 'C4', 'N0', 'N1', 'N2', 'N3', 'N4', 'D0', 'D1', 'D2', 'D3', 'D4', 'S0', 'S1', 'S2', 'S3', 'S4', 'P0', 'P1', 'P2', 'P3', 'P4'];
     solver.solve({log: 1, max: 2, vars: outputVars});
 
-    expect(solver.solutions.length, 'solution count').to.eql(1);
+    // solution count
+    expect(solver.solutions.length).toBe(1);
 
     let s = solver.solutions[0];
-    expect(solutionFor(s, outputVars)).to.eql({
+    expect(solutionFor(s, outputVars)).toEqual({
       C0: yellow,
       D0: water,
       N0: norwegian,

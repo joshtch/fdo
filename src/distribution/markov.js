@@ -45,14 +45,7 @@ https://en.wikipedia.org/wiki/Markov_chain#Music
 
 */
 
-import {
-  ASSERT,
-} from '../../../fdlib/src/helpers';
-import {
-  domain_containsValue,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+import { ASSERT, domain_containsValue } from 'fdlib';
 
 /**
  * Given a domain, probability vector, value legend, and rng
@@ -70,18 +63,27 @@ import {
  * @param {boolean} [rngIsNormalized=true] Is 0<=rng()<1 or 0<=rng()<total_prob ? The latter is only used for testing to avoid rounding errors.
  * @return {number | undefined}
  */
-function distribution_markovSampleNextFromDomain(domain, probVector, valLegend, randomFunc, rngIsNormalized = true) {
-  ASSERT(!!valLegend, 'A_SHOULD_HAVE_VAL_LEGEND');
-  ASSERT(probVector.length <= valLegend.length, 'A_PROB_VECTOR_SIZE_SHOULD_BE_LTE_LEGEND');
+function distribution_markovSampleNextFromDomain(
+  domain,
+  probVector,
+  valLegend,
+  randomFunc,
+  rngIsNormalized = true
+) {
+  ASSERT(Boolean(valLegend), 'A_SHOULD_HAVE_VAL_LEGEND');
+  ASSERT(
+    probVector.length <= valLegend.length,
+    'A_PROB_VECTOR_SIZE_SHOULD_BE_LTE_LEGEND'
+  );
 
-  // make vector & legend for available values only
-  let filteredLegend = [];
-  let cumulativeFilteredProbVector = [];
+  // Make vector & legend for available values only
+  const filteredLegend = [];
+  const cumulativeFilteredProbVector = [];
   let totalProb = 0;
   for (let index = 0; index < probVector.length; index++) {
-    let prob = probVector[index];
+    const prob = probVector[index];
     if (prob > 0) {
-      let value = valLegend[index];
+      const value = valLegend[index];
       if (domain_containsValue(domain, value)) {
         totalProb += prob;
         cumulativeFilteredProbVector.push(totalProb);
@@ -90,19 +92,25 @@ function distribution_markovSampleNextFromDomain(domain, probVector, valLegend, 
     }
   }
 
-  // no more values left to search
+  // No more values left to search
   if (cumulativeFilteredProbVector.length === 0) {
     return;
   }
 
-  // only one value left
+  // Only one value left
   if (cumulativeFilteredProbVector.length === 1) {
     return filteredLegend[0];
   }
 
   // TOFIX: could set `cumulativeFilteredProbVector[cumulativeFilteredProbVector.length-1] = 1` here...
 
-  return _distribution_markovRoll(randomFunc, totalProb, cumulativeFilteredProbVector, filteredLegend, rngIsNormalized);
+  return _distribution_markovRoll(
+    randomFunc,
+    totalProb,
+    cumulativeFilteredProbVector,
+    filteredLegend,
+    rngIsNormalized
+  );
 }
 
 /**
@@ -114,21 +122,33 @@ function distribution_markovSampleNextFromDomain(domain, probVector, valLegend, 
  * @param {boolean} rngIsNormalized
  * @returns {number}
  */
-function _distribution_markovRoll(rng, totalProb, cumulativeProbVector, valueLegend, rngIsNormalized) {
-  let rngRoll = rng();
+function _distribution_markovRoll(
+  rng,
+  totalProb,
+  cumulativeProbVector,
+  valueLegend,
+  rngIsNormalized
+) {
+  const rngRoll = rng();
   let probVal = rngRoll;
-  if (rngIsNormalized) { // 0 <= rng < 1
+  if (rngIsNormalized) {
+    // 0 <= rng < 1
     // roll should yield; 0<=value<1
     ASSERT(rngRoll >= 0, 'RNG_SHOULD_BE_NORMALIZED');
     ASSERT(rngRoll < 1, 'RNG_SHOULD_BE_NORMALIZED');
     probVal = rngRoll * totalProb;
   }
-  // else 0 <= rng < totalProb (mostly to avoid precision problems in tests)
+  // Else 0 <= rng < totalProb (mostly to avoid precision problems in tests)
 
-  for (var index = 0; index < cumulativeProbVector.length; index++) {
-    // note: if first element is 0.1 and roll is 0.1 this will pick the
+  let index = 0;
+  for (
+    const probVectorCount = cumulativeProbVector.length;
+    index < probVectorCount;
+    index++
+  ) {
+    // Note: if first element is 0.1 and roll is 0.1 this will pick the
     // SECOND item. by design. so prob domains are `[x, y)`
-    let prob = cumulativeProbVector[index];
+    const prob = cumulativeProbVector[index];
     if (prob > probVal) {
       break;
     }
@@ -137,6 +157,4 @@ function _distribution_markovRoll(rng, totalProb, cumulativeProbVector, valueLeg
   return valueLegend[index];
 }
 
-// BODY_STOP
-
-export default distribution_markovSampleNextFromDomain;
+export { distribution_markovSampleNextFromDomain };

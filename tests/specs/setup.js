@@ -5,7 +5,7 @@ import FDO from '../../src/fdo';
 import {
   setSolver,
   setThrowStratMode,
-} from '../../../fdv/verifier';
+} from 'fdv/verifier';
 
 setThrowStratMode(true); // FDO shouldnt pre-optimize so would always hit throw for these tests
 setSolver((dsl, fdpOptions, fdoOptions) => FDO.solve(dsl, fdoOptions));

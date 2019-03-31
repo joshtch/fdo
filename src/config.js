@@ -5,24 +5,34 @@
 // This prevents leaking the small domain artifact outside of the library.
 
 import {
-  SUB,
-  SUP,
-
   ASSERT,
   ASSERT_NORDOM,
   ASSERT_VARDOMS_SLOW,
-  getTerm,
+  NOT_FOUND,
+  SUB,
+  SUP,
+  domain__debug,
+  domain_createRange,
+  domain_getValue,
+  domain_max,
+  domain_min,
+  domain_isSolved,
+  domain_toSmallest,
+  domain_anyToSmallest,
   INSPECT,
   THROW,
-} from '../../fdlib/src/helpers';
-import {
+  getTerm,
   TRIE_KEY_NOT_FOUND,
-
   trie_add,
   trie_create,
   trie_get,
   trie_has,
-} from '../../fdlib/src/trie';
+} from 'fdlib';
+
+import { constraint_create } from './constraint';
+
+import { distribution_getDefaults } from './distribution/defaults';
+
 import {
   propagator_addDistinct,
   propagator_addDiv,
@@ -41,34 +51,16 @@ import {
   propagator_addRingMul,
   propagator_addSum,
 } from './propagator';
-import {
-  NOT_FOUND,
-
-  domain__debug,
-  domain_createRange,
-  domain_getValue,
-  domain_max,
-  domain_min,
-  domain_isSolved,
-  domain_toSmallest,
-  domain_anyToSmallest,
-} from '../../fdlib/src/domain';
-import {
-  constraint_create,
-} from './constraint';
-import distribution_getDefaults from './distribution/defaults';
-
-// BODY_START
 
 /**
  * @returns {$config}
  */
 function config_create() {
-  let config = {
+  const config = {
     _class: '$config',
-    // names of all vars in this search tree
+    // Names of all vars in this search tree
     allVarNames: [],
-    // doing `indexOf` for 5000+ names is _not_ fast. so use a trie
+    // Doing `indexOf` for 5000+ names is _not_ fast. so use a trie
     _varNamesTrie: trie_create(),
 
     varStratConfig: config_createVarStratConfig(),
@@ -78,12 +70,12 @@ function config_create() {
     beforeSpace: undefined,
     afterSpace: undefined,
 
-    // this is for the rng stuff in this library. in due time all calls
+    // This is for the rng stuff in this library. in due time all calls
     // should happen through this function. and it should be initialized
     // with the rngCode string for exportability. this would be required
     // for webworkers and DSL imports which can't have functions. tests
     // can initialize it to something static, prod can use a seeded rng.
-    rngCode: '', // string. Function(rngCode) should return a callable rng
+    rngCode: '', // String. Function(rngCode) should return a callable rng
     _defaultRng: undefined, // Function. if not exist at init time it'll be `rngCode ? Function(rngCode) : Math.random`
 
     // the propagators are generated from the constraints when a space
@@ -93,14 +85,16 @@ function config_create() {
     constantCache: {}, // <value:varIndex>, generally anonymous vars but pretty much first come first serve
     initialDomains: [], // $nordom[] : initial domains for each var, maps 1:1 to allVarNames
 
-    _propagators: [], // initialized later
-    _varToPropagators: [], // initialized later
-    _constrainedAway: [], // list of var names that were constrained but whose constraint was optimized away. they will still be "targeted" if target is all. TODO: fix all tests that depend on this and eliminate this. it is a hack.
+    _propagators: [], // Initialized later
+    _varToPropagators: [], // Initialized later
+    _constrainedAway: [], // List of var names that were constrained but whose constraint was optimized away. they will still be "targeted" if target is all. TODO: fix all tests that depend on this and eliminate this. it is a hack.
 
-    _constraintHash: {}, // every constraint is logged here (note: for results only the actual constraints are stored). if it has a result, the value is the result var _name_. otherwise just `true` if it exists and `false` if it was optimized away.
+    _constraintHash: {}, // Every constraint is logged here (note: for results only the actual constraints are stored). if it has a result, the value is the result var _name_. otherwise just `true` if it exists and `false` if it was optimized away.
   };
 
-  ASSERT(!void (config._propagates = 0), 'number of propagate() calls');
+  if (process.env.NODE_ENV !== 'production') {
+    config._propagates = 0;
+  }
 
   return config;
 }
@@ -108,7 +102,7 @@ function config_create() {
 function config_clone(config, newDomains) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
 
-  let {
+  const {
     varStratConfig,
     valueStratName,
     targetedVars,
@@ -122,33 +116,39 @@ function config_clone(config, newDomains) {
     _constrainedAway,
   } = config;
 
-  let clone = {
+  const clone = {
     _class: '$config',
-    _varNamesTrie: trie_create(allVarNames), // just create a new trie with (should be) the same names
+    _varNamesTrie: trie_create(allVarNames), // Just create a new trie with (should be) the same names
 
     varStratConfig,
     valueStratName,
-    targetedVars: targetedVars instanceof Array ? targetedVars.slice(0) : targetedVars,
-    varDistOptions: JSON.parse(JSON.stringify(varDistOptions)),  // TOFIX: clone this more efficiently
+    targetedVars: Array.isArray(targetedVars)
+      ? targetedVars.slice(0)
+      : targetedVars,
+    varDistOptions: JSON.parse(JSON.stringify(varDistOptions)), // TOFIX: clone this more efficiently
 
     rngCode: config.rngCode,
     _defaultRng: config.rngCode ? undefined : config._defaultRng,
 
-    constantCache, // is by reference ok?
+    constantCache, // Is by reference ok?
 
     allVarNames: allVarNames.slice(0),
     allConstraints: allConstraints.slice(0),
-    initialDomains: newDomains ? newDomains.map(domain_toSmallest) : initialDomains, // <varName:domain>
+    initialDomains: newDomains
+      ? newDomains.map(domain_toSmallest)
+      : initialDomains, // <varName:domain>
 
-    _propagators: _propagators && _propagators.slice(0), // in case it is initialized
-    _varToPropagators: _varToPropagators && _varToPropagators.slice(0), // inited elsewhere
-    _constrainedAway: _constrainedAway && _constrainedAway.slice(0), // list of var names that were constrained but whose constraint was optimized away. they will still be "targeted" if target is all. TODO: fix all tests that depend on this and eliminate this. it is a hack.
+    _propagators: _propagators && _propagators.slice(0), // In case it is initialized
+    _varToPropagators: _varToPropagators && _varToPropagators.slice(0), // Inited elsewhere
+    _constrainedAway: _constrainedAway && _constrainedAway.slice(0), // List of var names that were constrained but whose constraint was optimized away. they will still be "targeted" if target is all. TODO: fix all tests that depend on this and eliminate this. it is a hack.
 
     // not sure what to do with this in the clone...
     _constraintHash: {},
   };
 
-  ASSERT(!void (clone._propagates = 0), 'number of propagate() calls');
+  if (process.env.NODE_ENV !== 'production') {
+    clone._propagates = 0;
+  }
 
   return clone;
 }
@@ -162,6 +162,7 @@ function config_clone(config, newDomains) {
 function config_addVarAnonNothing(config) {
   return config_addVarNothing(config, true);
 }
+
 /**
  * @param {$config} config
  * @param {string|boolean} varName (If true, is anonymous)
@@ -170,6 +171,7 @@ function config_addVarAnonNothing(config) {
 function config_addVarNothing(config, varName) {
   return _config_addVar(config, varName, domain_createRange(SUB, SUP));
 }
+
 /**
  * @param {$config} config
  * @param {number} lo
@@ -185,6 +187,7 @@ function config_addVarAnonRange(config, lo, hi) {
 
   return config_addVarRange(config, true, lo, hi);
 }
+
 /**
  * @param {$config} config
  * @param {string|boolean} varName (If true, is anonymous)
@@ -194,14 +197,18 @@ function config_addVarAnonRange(config, lo, hi) {
  */
 function config_addVarRange(config, varName, lo, hi) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof varName === 'string' || varName === true, 'A_VARNAME_SHOULD_BE_STRING_OR_TRUE');
+  ASSERT(
+    typeof varName === 'string' || varName === true,
+    'A_VARNAME_SHOULD_BE_STRING_OR_TRUE'
+  );
   ASSERT(typeof lo === 'number', 'A_LO_MUST_BE_NUMBER');
   ASSERT(typeof hi === 'number', 'A_HI_MUST_BE_NUMBER');
   ASSERT(lo <= hi, 'A_RANGES_SHOULD_ASCEND');
 
-  let domain = domain_createRange(lo, hi);
+  const domain = domain_createRange(lo, hi);
   return _config_addVar(config, varName, domain);
 }
+
 /**
  * @param {$config} config
  * @param {string|boolean} varName (If true, anon)
@@ -209,10 +216,17 @@ function config_addVarRange(config, varName, lo, hi) {
  * @returns {number} varIndex
  */
 function config_addVarDomain(config, varName, domain, _allowEmpty, _override) {
-  ASSERT(domain instanceof Array, 'DOMAIN_MUST_BE_ARRAY_HERE');
+  ASSERT(Array.isArray(domain), 'DOMAIN_MUST_BE_ARRAY_HERE');
 
-  return _config_addVar(config, varName, domain_anyToSmallest(domain), _allowEmpty, _override);
+  return _config_addVar(
+    config,
+    varName,
+    domain_anyToSmallest(domain),
+    _allowEmpty,
+    _override
+  );
 }
+
 /**
  * @param {$config} config
  * @param {number} value
@@ -228,6 +242,7 @@ function config_addVarAnonConstant(config, value) {
 
   return config_addVarConstant(config, true, value);
 }
+
 /**
  * @param {$config} config
  * @param {string|boolean} varName (True means anon)
@@ -236,10 +251,13 @@ function config_addVarAnonConstant(config, value) {
  */
 function config_addVarConstant(config, varName, value) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(typeof varName === 'string' || varName === true, 'varName must be a string or true for anon');
+  ASSERT(
+    typeof varName === 'string' || varName === true,
+    'varName must be a string or true for anon'
+  );
   ASSERT(typeof value === 'number', 'A_VALUE_SHOULD_BE_NUMBER');
 
-  let domain = domain_createRange(value, value);
+  const domain = domain_createRange(value, value);
 
   return _config_addVar(config, varName, domain);
 }
@@ -250,40 +268,64 @@ function config_addVarConstant(config, varName, value) {
  * @param {$nordom} domain
  * @returns {number} varIndex
  */
-function _config_addVar(config, varName, domain, _allowEmpty, _override = false) {
+function _config_addVar(
+  config,
+  varName,
+  domain,
+  _allowEmpty,
+  _override = false
+) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(_allowEmpty || domain, 'NON_EMPTY_DOMAIN');
-  ASSERT(_allowEmpty || domain_min(domain) >= SUB, 'domain lo should be >= SUB', domain);
-  ASSERT(_allowEmpty || domain_max(domain) <= SUP, 'domain hi should be <= SUP', domain);
+  ASSERT(
+    _allowEmpty || domain_min(domain) >= SUB,
+    'domain lo should be >= SUB',
+    domain
+  );
+  ASSERT(
+    _allowEmpty || domain_max(domain) <= SUP,
+    'domain hi should be <= SUP',
+    domain
+  );
 
   if (_override) {
-    ASSERT(trie_has(config._varNamesTrie, varName), 'Assuming var exists when explicitly overriding');
-    let index = trie_get(config._varNamesTrie, varName);
+    ASSERT(
+      trie_has(config._varNamesTrie, varName),
+      'Assuming var exists when explicitly overriding'
+    );
+    const index = trie_get(config._varNamesTrie, varName);
     ASSERT(index >= 0, 'should exist');
     ASSERT_NORDOM(domain, true, domain__debug);
     config.initialDomains[index] = domain;
     return;
   }
 
-  let allVarNames = config.allVarNames;
-  let varIndex = allVarNames.length;
+  const { allVarNames } = config;
+  const varIndex = allVarNames.length;
 
   if (varName === true) {
     varName = '__' + String(varIndex) + '__';
   } else {
-    if (typeof varName !== 'string') THROW('Var names should be a string or anonymous, was: ' + JSON.stringify(varName));
+    if (typeof varName !== 'string')
+      THROW(
+        'Var names should be a string or anonymous, was: ' +
+          JSON.stringify(varName)
+      );
     if (!varName) THROW('Var name cannot be empty string');
-    if (String(parseInt(varName, 10)) === varName) THROW('Don\'t use numbers as var names (' + varName + ')');
+    if (String(parseInt(varName, 10)) === varName)
+      THROW("Don't use numbers as var names (" + varName + ')');
   }
 
-  // note: 100 is an arbitrary number but since large sets are probably
+  // Note: 100 is an arbitrary number but since large sets are probably
   // automated it's very unlikely we'll need this check in those cases
   if (varIndex < 100) {
-    if (trie_has(config._varNamesTrie, varName)) THROW('Var name already part of this config. Probably a bug?', varName);
+    if (trie_has(config._varNamesTrie, varName))
+      THROW('Var name already part of this config. Probably a bug?', varName);
   }
 
-  let solvedTo = domain_getValue(domain);
-  if (solvedTo !== NOT_FOUND && !config.constantCache[solvedTo]) config.constantCache[solvedTo] = varIndex;
+  const solvedTo = domain_getValue(domain);
+  if (solvedTo !== NOT_FOUND && !config.constantCache[solvedTo])
+    config.constantCache[solvedTo] = varIndex;
 
   ASSERT_NORDOM(domain, true, domain__debug);
   config.initialDomains[varIndex] = domain;
@@ -301,8 +343,10 @@ function _config_addVar(config, varName, domain, _allowEmpty, _override = false)
  */
 function config_setDefaults(config, varName) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
-  let defs = distribution_getDefaults(varName);
-  for (let key in defs) config_setOption(config, key, defs[key]);
+  const defs = distribution_getDefaults(varName);
+  for (const [key, def] of Object.entries(defs)) {
+    config_setOption(config, key, def);
+  }
 }
 
 /**
@@ -324,7 +368,7 @@ function config_createVarStratConfig(obj) {
     type: (obj && obj.type) || 'naive',
     priorityByName: obj && obj.priorityByName,
     _priorityByIndex: undefined,
-    inverted: !!(obj && obj.inverted),
+    inverted: Boolean(obj && obj.inverted),
     fallback: obj && obj.fallback,
   };
 }
@@ -341,7 +385,10 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
   ASSERT(config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof optionName === 'string', 'option name is a string');
   ASSERT(optionValue !== undefined, 'should get a value');
-  ASSERT(optionTarget === undefined || typeof optionTarget === 'string', 'the optional name is a string');
+  ASSERT(
+    optionTarget === undefined || typeof optionTarget === 'string',
+    'the optional name is a string'
+  );
 
   if (optionName === 'varStratOverride') {
     THROW('deprecated, should be wiped internally');
@@ -351,14 +398,20 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
   switch (optionName) {
     case 'varStrategyFallback':
       fallback = true;
-      // fall-through
-    case 'varStrategy':
-      if (typeof optionValue === 'function') THROW('functions no longer supported', optionValue);
-      if (typeof optionValue === 'string') THROW('strings should be passed on as {type:value}', optionValue);
-      if (typeof optionValue !== 'object') THROW('varStrategy should be object', optionValue);
+    // Fall-through
+    case 'varStrategy': {
+      if (typeof optionValue === 'function')
+        THROW('functions no longer supported', optionValue);
+      if (typeof optionValue === 'string')
+        THROW('strings should be passed on as {type:value}', optionValue);
+      if (typeof optionValue !== 'object')
+        THROW('varStrategy should be object', optionValue);
       if (optionValue.name) THROW('name should be type');
       if (optionValue.dist_name) THROW('dist_name should be type');
-      ASSERT(!optionTarget, 'optionTarget is not used for varStrategy (this is not "per-var strat")');
+      ASSERT(
+        !optionTarget,
+        'optionTarget is not used for varStrategy (this is not "per-var strat")'
+      );
       let vsc = config_createVarStratConfig(optionValue);
       if (fallback) {
         let rvsc = config.varStratConfig;
@@ -372,15 +425,19 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
           vsc = vsc.fallback;
         }
       }
+
       break;
+    }
 
     case 'valueStrategy':
-      // determine how the next value of a variable is picked when creating a new space
+      // Determine how the next value of a variable is picked when creating a new space
       config.valueStratName = optionValue;
       break;
 
     case 'targeted_var_names':
-      if (!optionValue || !optionValue.length) THROW('ONLY_USE_WITH_SOME_TARGET_VARS'); // omit otherwise to target all
+      if (!optionValue || optionValue.length === 0) {
+        THROW('ONLY_USE_WITH_SOME_TARGET_VARS'); // Omit otherwise to target all
+      }
       // which vars must be solved for this space to be solved
       // string: 'all'
       // string[]: list of vars that must be solved
@@ -393,41 +450,55 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
       // which overrides the globally set value distributor.
       // See Bvar#distributeOptions (in multiverse)
 
-      for (let key in optionValue) {
-        config_setOption(config, 'varValueStrat', optionValue[key], key);
+      for (const [key, value] of Object.entries(optionValue)) {
+        config_setOption(config, 'varValueStrat', value, key);
       }
+
       break;
 
     case 'varValueStrat':
-      // override all the specific strategy parameters for one variable
+      // Override all the specific strategy parameters for one variable
       ASSERT(typeof optionTarget === 'string', 'expecting a name');
       if (!config.varDistOptions) config.varDistOptions = {};
       ASSERT(!config.varDistOptions[optionTarget], 'should not be known yet');
       config.varDistOptions[optionTarget] = optionValue;
 
       if (optionValue.valtype === 'markov') {
-        let matrix = optionValue.matrix;
+        let { matrix } = optionValue;
         if (!matrix) {
           if (optionValue.expandVectorsWith) {
-            matrix = optionValue.matrix = [{vector: []}];
+            matrix = optionValue.matrix = [{ vector: [] }];
           } else {
-            THROW('FDO: markov var missing distribution (needs matrix or expandVectorsWith)');
+            THROW(
+              'FDO: markov var missing distribution (needs matrix or expandVectorsWith)'
+            );
           }
         }
 
-        for (let i = 0, n = matrix.length; i < n; ++i) {
-          let row = matrix[i];
-          if (row.boolean) THROW('row.boolean was deprecated in favor of row.boolVarName');
-          if (row.booleanId !== undefined) THROW('row.booleanId is no longer used, please use row.boolVarName');
+        for (const row of matrix) {
+          if (row.boolean)
+            THROW('row.boolean was deprecated in favor of row.boolVarName');
+          if (row.booleanId !== undefined)
+            THROW(
+              'row.booleanId is no longer used, please use row.boolVarName'
+            );
           let boolFuncOrName = row.boolVarName;
           if (typeof boolFuncOrName === 'function') {
             boolFuncOrName = boolFuncOrName(optionValue);
           }
+
           if (boolFuncOrName) {
             if (typeof boolFuncOrName !== 'string') {
-              THROW('row.boolVarName, if it exists, should be the name of a var or a func that returns that name, was/got: ' + boolFuncOrName + ' (' + typeof boolFuncOrName + ')');
+              THROW(
+                'row.boolVarName, if it exists, should be the name of a var or a func that returns that name, was/got: ' +
+                  boolFuncOrName +
+                  ' (' +
+                  typeof boolFuncOrName +
+                  ')'
+              );
             }
-            // store the var index
+
+            // Store the var index
             row._boolVarIndex = trie_get(config._varNamesTrie, boolFuncOrName);
           }
         }
@@ -446,24 +517,31 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
       config.afterSpace = optionValue;
       break;
 
-    case 'var': return THROW('REMOVED. Replace `var` with `varStrategy`');
-    case 'val': return THROW('REMOVED. Replace `var` with `valueStrategy`');
+    case 'var':
+      return THROW('REMOVED. Replace `var` with `varStrategy`');
+    case 'val':
+      return THROW('REMOVED. Replace `var` with `valueStrategy`');
 
     case 'rng':
-      // sets the default rng for this solve. a string should be raw js
+      // Sets the default rng for this solve. a string should be raw js
       // code, number will be a static return value, a function is used
       // as is. the resulting function should return a value `0<=v<1`
       if (typeof optionValue === 'string') {
         config.rngCode = optionValue;
       } else if (typeof optionValue === 'number') {
-        config.rngCode = 'return ' + optionValue + ';'; // dont use arrow function. i dont think this passes through babel.
+        config.rngCode = 'return ' + optionValue + ';'; // Dont use arrow function. i dont think this passes through babel.
       } else {
-        ASSERT(typeof optionValue === 'function', 'rng should be a preferably a string and otherwise a function');
+        ASSERT(
+          typeof optionValue === 'function',
+          'rng should be a preferably a string and otherwise a function'
+        );
         config._defaultRng = optionValue;
       }
+
       break;
 
-    default: THROW('unknown option');
+    default:
+      THROW('unknown option');
   }
 }
 
@@ -485,17 +563,35 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
 function config_setOptions(config, options) {
   if (!options) return;
 
-  if (options.varStrategy) config_setOption(config, 'varStrategy', options.varStrategy);
-  if (options.valueStrategy) config_setOption(config, 'valueStrategy', options.valueStrategy);
-  if (options.targeted_var_names) config_setOption(config, 'targeted_var_names', options.targeted_var_names);
-  if (options.varStratOverrides) config_setOption(config, 'varStratOverrides', options.varStratOverrides);
+  if (options.varStrategy)
+    config_setOption(config, 'varStrategy', options.varStrategy);
+  if (options.valueStrategy)
+    config_setOption(config, 'valueStrategy', options.valueStrategy);
+  if (options.targeted_var_names)
+    config_setOption(config, 'targeted_var_names', options.targeted_var_names);
+  if (options.varStratOverrides)
+    config_setOption(config, 'varStratOverrides', options.varStratOverrides);
   if (options.varStratOverride) {
     getTerm().warn('deprecated "varStratOverride" in favor of "varValueStrat"');
-    config_setOption(config, 'varValueStrat', options.varStratOverride, options.varStratOverrideName);
+    config_setOption(
+      config,
+      'varValueStrat',
+      options.varStratOverride,
+      options.varStratOverrideName
+    );
   }
-  if (options.varValueStrat) config_setOption(config, 'varValueStrat', options.varValueStrat, options.varStratOverrideName);
-  if (options.beforeSpace) config_setOption(config, 'beforeSpace', options.beforeSpace);
-  if (options.afterSpace) config_setOption(config, 'afterSpace', options.afterSpace);
+
+  if (options.varValueStrat)
+    config_setOption(
+      config,
+      'varValueStrat',
+      options.varValueStrat,
+      options.varStratOverrideName
+    );
+  if (options.beforeSpace)
+    config_setOption(config, 'beforeSpace', options.beforeSpace);
+  if (options.afterSpace)
+    config_setOption(config, 'afterSpace', options.afterSpace);
 }
 
 /**
@@ -517,27 +613,56 @@ function config_addPropagator(config, propagator) {
  * @param {$config} config
  */
 function config_populateVarPropHash(config) {
-  let hash = new Array(config.allVarNames.length);
-  let propagators = config._propagators;
-  let initialDomains = config.initialDomains;
-  for (let propagatorIndex = 0, plen = propagators.length; propagatorIndex < plen; ++propagatorIndex) {
-    let propagator = propagators[propagatorIndex];
-    _config_addVarConditionally(propagator.index1, initialDomains, hash, propagatorIndex);
-    if (propagator.index2 >= 0) _config_addVarConditionally(propagator.index2, initialDomains, hash, propagatorIndex);
-    if (propagator.index3 >= 0) _config_addVarConditionally(propagator.index3, initialDomains, hash, propagatorIndex);
+  const hash = new Array(config.allVarNames.length);
+  const propagators = config._propagators;
+  const { initialDomains } = config;
+  for (
+    let propagatorIndex = 0, plen = propagators.length;
+    propagatorIndex < plen;
+    ++propagatorIndex
+  ) {
+    const propagator = propagators[propagatorIndex];
+    _config_addVarConditionally(
+      propagator.index1,
+      initialDomains,
+      hash,
+      propagatorIndex
+    );
+    if (propagator.index2 >= 0)
+      _config_addVarConditionally(
+        propagator.index2,
+        initialDomains,
+        hash,
+        propagatorIndex
+      );
+    if (propagator.index3 >= 0)
+      _config_addVarConditionally(
+        propagator.index3,
+        initialDomains,
+        hash,
+        propagatorIndex
+      );
   }
+
   config._varToPropagators = hash;
 }
-function _config_addVarConditionally(varIndex, initialDomains, hash, propagatorIndex) {
+
+function _config_addVarConditionally(
+  varIndex,
+  initialDomains,
+  hash,
+  propagatorIndex
+) {
   // (at some point this could be a strings, or array, or whatever)
   ASSERT(typeof varIndex === 'number', 'must be number');
-  // dont bother adding props on unsolved vars because they can't affect
+  // Dont bother adding props on unsolved vars because they can't affect
   // anything anymore. seems to prevent about 10% in our case so worth it.
-  let domain = initialDomains[varIndex];
+  const domain = initialDomains[varIndex];
   ASSERT_NORDOM(domain, true, domain__debug);
   if (!domain_isSolved(domain)) {
     if (!hash[varIndex]) hash[varIndex] = [propagatorIndex];
-    else if (hash[varIndex].indexOf(propagatorIndex) < 0) hash[varIndex].push(propagatorIndex);
+    else if (hash[varIndex].indexOf(propagatorIndex) < 0)
+      hash[varIndex].push(propagatorIndex);
   }
 }
 
@@ -565,29 +690,35 @@ function _config_addVarConditionally(varIndex, initialDomains, hash, propagatorI
  * @returns {string|undefined} Actual result vars only, undefined otherwise. See desc above.
  */
 function config_addConstraint(config, name, varNames, param) {
-  // should return a new var name for most props
+  // Should return a new var name for most props
   ASSERT(config && config._class === '$config', 'EXPECTING_CONFIG');
-  ASSERT(varNames.every(e => typeof e === 'string' || typeof e === 'number' || e === undefined), 'all var names should be strings or numbers or undefined', varNames);
+  ASSERT(
+    varNames.every(
+      e => typeof e === 'string' || typeof e === 'number' || e === undefined
+    ),
+    'all var names should be strings or numbers or undefined',
+    varNames
+  );
 
   let inputConstraintKeyOp = name;
   let resultVarName;
 
   let anonIsBool = false;
-  switch (name) { /* eslint no-fallthrough: "off" */
+  switch (name /* eslint no-fallthrough: "off" */) {
     case 'reifier':
       anonIsBool = true;
       inputConstraintKeyOp = param;
-      // fall-through
+    // Fall-through
     case 'plus':
     case 'min':
     case 'ring-mul':
     case 'ring-div':
     case 'mul':
-      ASSERT(varNames.length === 3, 'MISSING_RESULT_VAR'); // note that the third value may still be "undefined"
-      // fall-through
+      ASSERT(varNames.length === 3, 'MISSING_RESULT_VAR'); // Note that the third value may still be "undefined"
+    // fall-through
     case 'sum':
     case 'product': {
-      let sumOrProduct = name === 'product' || name === 'sum';
+      const sumOrProduct = name === 'product' || name === 'sum';
 
       resultVarName = sumOrProduct ? param : varNames[2];
       let resultVarIndex;
@@ -599,11 +730,16 @@ function config_addConstraint(config, name, varNames, param) {
       } else if (typeof resultVarName === 'number') {
         resultVarIndex = config_addVarAnonConstant(config, resultVarName);
         resultVarName = config.allVarNames[resultVarIndex];
-      } else if (typeof resultVarName !== 'string') {
-        THROW(`expecting result var name to be absent or a number or string: \`${resultVarName}\``);
-      } else {
+      } else if (typeof resultVarName === 'string') {
         resultVarIndex = trie_get(config._varNamesTrie, resultVarName);
-        if (resultVarIndex < 0) THROW('Vars must be defined before using them (' + resultVarName + ')');
+        if (resultVarIndex < 0)
+          THROW(
+            'Vars must be defined before using them (' + resultVarName + ')'
+          );
+      } else {
+        THROW(
+          `expecting result var name to be absent or a number or string: \`${resultVarName}\``
+        );
       }
 
       if (sumOrProduct) param = resultVarIndex;
@@ -625,14 +761,21 @@ function config_addConstraint(config, name, varNames, param) {
       THROW(`UNKNOWN_PROPAGATOR ${name}`);
   }
 
-  // note: if param is a var constant then that case is already resolved above
+  // Note: if param is a var constant then that case is already resolved above
   config_compileConstants(config, varNames);
 
-  if (config_dedupeConstraint(config, inputConstraintKeyOp + '|' + varNames.join(','), resultVarName)) return resultVarName;
+  if (
+    config_dedupeConstraint(
+      config,
+      inputConstraintKeyOp + '|' + varNames.join(','),
+      resultVarName
+    )
+  )
+    return resultVarName;
 
-  let varIndexes = config_varNamesToIndexes(config, varNames);
+  const varIndexes = config_varNamesToIndexes(config, varNames);
 
-  let constraint = constraint_create(name, varIndexes, param);
+  const constraint = constraint_create(name, varIndexes, param);
   config.allConstraints.push(constraint);
 
   return resultVarName;
@@ -649,7 +792,7 @@ function config_addConstraint(config, name, varNames, param) {
 function config_compileConstants(config, varNames) {
   for (let i = 0, n = varNames.length; i < n; ++i) {
     if (typeof varNames[i] === 'number') {
-      let varIndex = config_addVarAnonConstant(config, varNames[i]);
+      const varIndex = config_addVarAnonConstant(config, varNames[i]);
       varNames[i] = config.allVarNames[varIndex];
     }
   }
@@ -663,14 +806,30 @@ function config_compileConstants(config, varNames) {
  * @returns {number[]}
  */
 function config_varNamesToIndexes(config, varNames) {
-  let varIndexes = [];
+  const varIndexes = [];
   for (let i = 0, n = varNames.length; i < n; ++i) {
-    let varName = varNames[i];
-    ASSERT(typeof varName === 'string', 'var names should be strings here', varName, i, varNames);
-    let varIndex = trie_get(config._varNamesTrie, varName);
-    if (varIndex === TRIE_KEY_NOT_FOUND) THROW('CONSTRAINT_VARS_SHOULD_BE_DECLARED', 'name=', varName, 'index=', i, 'names=', varNames);
+    const varName = varNames[i];
+    ASSERT(
+      typeof varName === 'string',
+      'var names should be strings here',
+      varName,
+      i,
+      varNames
+    );
+    const varIndex = trie_get(config._varNamesTrie, varName);
+    if (varIndex === TRIE_KEY_NOT_FOUND)
+      THROW(
+        'CONSTRAINT_VARS_SHOULD_BE_DECLARED',
+        'name=',
+        varName,
+        'index=',
+        i,
+        'names=',
+        varNames
+      );
     varIndexes[i] = varIndex;
   }
+
   return varIndexes;
 }
 
@@ -684,21 +843,31 @@ function config_varNamesToIndexes(config, varNames) {
  * @returns {boolean}
  */
 function config_dedupeConstraint(config, constraintUI, resultVarName) {
-  if (!config._constraintHash) config._constraintHash = {}; // can happen for imported configs that are extended or smt
-  let haveConstraint = config._constraintHash[constraintUI];
+  if (!config._constraintHash) config._constraintHash = {}; // Can happen for imported configs that are extended or smt
+  const haveConstraint = config._constraintHash[constraintUI];
+
   if (haveConstraint === true) {
     if (resultVarName !== undefined) {
-      throw new Error('How is this possible?'); // either a constraint-with-value gets a result var, or it's a constraint-sans-value
+      throw new Error('How is this possible?'); // Either a constraint-with-value gets a result var, or it's a constraint-sans-value
     }
+
     return true;
   }
+
   if (haveConstraint !== undefined) {
-    ASSERT(typeof haveConstraint === 'string', 'if not true or undefined, it should be a string');
-    ASSERT(resultVarName && typeof resultVarName === 'string', 'if it was recorded as a constraint-with-value then it should have a result var now as well');
-    // the constraint exists and had a result. map that result to this result for equivalent results.
+    ASSERT(
+      typeof haveConstraint === 'string',
+      'if not true or undefined, it should be a string'
+    );
+    ASSERT(
+      resultVarName && typeof resultVarName === 'string',
+      'if it was recorded as a constraint-with-value then it should have a result var now as well'
+    );
+    // The constraint exists and had a result. map that result to this result for equivalent results.
     config_addConstraint(config, 'eq', [resultVarName, haveConstraint]); // _could_ also be optimized away ;)
     return true;
   }
+
   config._constraintHash[constraintUI] = resultVarName || true;
   return false;
 }
@@ -711,49 +880,96 @@ function config_dedupeConstraint(config, constraintUI, resultVarName) {
  */
 function config_generatePropagators(config) {
   ASSERT(config && config._class === '$config', 'EXPECTING_CONFIG');
-  let constraints = config.allConstraints;
+  const { allConstraints } = config;
   config._propagators = [];
-  for (let i = 0, n = constraints.length; i < n; ++i) {
-    let constraint = constraints[i];
+  for (const constraint of allConstraints) {
     if (constraint.varNames) {
-      getTerm().warn('saw constraint.varNames, converting to varIndexes, log out result and update test accordingly');
-      constraint.varIndexes = constraint.varNames.map(name => trie_get(config._varNamesTrie, name));
-      let p = constraint.param;
+      getTerm().warn(
+        'saw constraint.varNames, converting to varIndexes, log out result and update test accordingly'
+      );
+      constraint.varIndexes = constraint.varNames.map(name =>
+        trie_get(config._varNamesTrie, name)
+      );
+      const p = constraint.param;
       delete constraint.param;
       delete constraint.varNames;
       constraint.param = p;
     }
-    if (constraint.varIndexes[1] === -1) throw new Error('nope? ' + INSPECT(constraint));
 
-    config_generatePropagator(config, constraint.name, constraint.varIndexes, constraint.param, constraint);
+    if (constraint.varIndexes[1] === -1)
+      throw new Error('nope? ' + INSPECT(constraint));
+
+    config_generatePropagator(
+      config,
+      constraint.name,
+      constraint.varIndexes,
+      constraint.param,
+      constraint
+    );
   }
 }
+
 /**
  * @param {$config} config
  * @param {string} name
  * @param {number[]} varIndexes
  * @param {string|undefined} param Depends on the prop; reifier=op name, product/sum=result var
  */
-function config_generatePropagator(config, name, varIndexes, param, _constraint) {
+function config_generatePropagator(
+  config,
+  name,
+  varIndexes,
+  param,
+  _constraint
+) {
   ASSERT(config && config._class === '$config', 'EXPECTING_CONFIG');
   ASSERT(typeof name === 'string', 'NAME_SHOULD_BE_STRING');
-  ASSERT(varIndexes instanceof Array, 'INDEXES_SHOULD_BE_ARRAY', JSON.stringify(_constraint));
+  ASSERT(
+    Array.isArray(varIndexes),
+    'INDEXES_SHOULD_BE_ARRAY',
+    JSON.stringify(_constraint)
+  );
 
   switch (name) {
     case 'plus':
-      return propagator_addPlus(config, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addPlus(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'min':
-      return propagator_addMin(config, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addMin(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'ring-mul':
-      return propagator_addRingMul(config, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addRingMul(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'ring-div':
-      return propagator_addDiv(config, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addDiv(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'mul':
-      return propagator_addMul(config, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addMul(
+        config,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'sum':
       return propagator_addSum(config, varIndexes.slice(0), param);
@@ -765,7 +981,13 @@ function config_generatePropagator(config, name, varIndexes, param, _constraint)
       return propagator_addDistinct(config, varIndexes.slice(0));
 
     case 'reifier':
-      return propagator_addReified(config, param, varIndexes[0], varIndexes[1], varIndexes[2]);
+      return propagator_addReified(
+        config,
+        param,
+        varIndexes[0],
+        varIndexes[1],
+        varIndexes[2]
+      );
 
     case 'neq':
       return propagator_addNeq(config, varIndexes[0], varIndexes[1]);
@@ -791,11 +1013,16 @@ function config_generatePropagator(config, name, varIndexes, param, _constraint)
 }
 
 function config_generateMarkovs(config) {
-  let varDistOptions = config.varDistOptions;
-  for (let varName in varDistOptions) {
-    let varIndex = trie_get(config._varNamesTrie, varName);
-    if (varIndex < 0) THROW('Found markov var options for an unknown var name (name=' + varName + ')');
-    let options = varDistOptions[varName];
+  const { varDistOptions } = config;
+  for (const varName of Object.keys(varDistOptions)) {
+    const varIndex = trie_get(config._varNamesTrie, varName);
+    if (varIndex < 0)
+      THROW(
+        'Found markov var options for an unknown var name (name=' +
+          varName +
+          ')'
+      );
+    const options = varDistOptions[varName];
     if (options && options.valtype === 'markov') {
       return propagator_addMarkov(config, varIndex);
     }
@@ -806,13 +1033,17 @@ function config_populateVarStrategyListHash(config) {
   let vsc = config.varStratConfig;
   while (vsc) {
     if (vsc.priorityByName) {
-      let obj = {};
-      let list = vsc.priorityByName;
+      const obj = {};
+      const list = vsc.priorityByName;
       for (let i = 0, len = list.length; i < len; ++i) {
-        let varIndex = trie_get(config._varNamesTrie, list[i]);
-        ASSERT(varIndex !== TRIE_KEY_NOT_FOUND, 'VARS_IN_PRIO_LIST_SHOULD_BE_KNOWN_NOW');
-        obj[varIndex] = len - i; // never 0, offset at 1. higher value is higher prio
+        const varIndex = trie_get(config._varNamesTrie, list[i]);
+        ASSERT(
+          varIndex !== TRIE_KEY_NOT_FOUND,
+          'VARS_IN_PRIO_LIST_SHOULD_BE_KNOWN_NOW'
+        );
+        obj[varIndex] = len - i; // Never 0, offset at 1. higher value is higher prio
       }
+
       vsc._priorityByIndex = obj;
     }
 
@@ -833,7 +1064,10 @@ function config_init(config) {
 
   // Generate the default rng ("Random Number Generator") to use in stuff like markov
   // We prefer the rngCode because that way we can serialize the config (required for stuff like webworkers)
-  if (!config._defaultRng) config._defaultRng = config.rngCode ? Function(config.rngCode) : Math.random; /* eslint no-new-func: "off" */
+  if (!config._defaultRng)
+    config._defaultRng = config.rngCode
+      ? new Function(config.rngCode)
+      : Math.random; /* eslint no-new-func: "off" */
 
   ASSERT_VARDOMS_SLOW(config.initialDomains, domain__debug);
   config_generatePropagators(config);
@@ -844,8 +1078,6 @@ function config_init(config) {
 
   ASSERT(config._varToPropagators, 'should have generated hash');
 }
-
-// BODY_STOP
 
 export {
   config_addConstraint,
@@ -866,7 +1098,6 @@ export {
   config_setDefaults,
   config_setOption,
   config_setOptions,
-
-  // testing
+  // Testing
   _config_addVar,
 };

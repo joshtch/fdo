@@ -1,17 +1,12 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
-import {
+  LOG_FLAG_PROPSTEPS,
   domain__debug,
   domain_intersection,
   domain_sharesNoElements,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib';
 
 /**
  * This eq propagator looks a lot different from neq because in
@@ -33,20 +28,32 @@ function propagator_eqStepBare(space, config, varIndex1, varIndex2) {
   ASSERT(typeof varIndex1 === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
   ASSERT(typeof varIndex2 === 'number', 'VAR_INDEX_SHOULD_BE_NUMBER');
 
-  let vardoms = space.vardoms;
-  let domain1 = vardoms[varIndex1];
-  let domain2 = vardoms[varIndex2];
+  const { vardoms } = space;
+  const domain1 = vardoms[varIndex1];
+  const domain2 = vardoms[varIndex2];
 
   ASSERT_NORDOM(domain1);
   ASSERT_NORDOM(domain2);
   ASSERT(domain1 && domain2, 'SHOULD_NOT_BE_REJECTED');
 
-  let result = domain_intersection(domain1, domain2);
+  const result = domain_intersection(domain1, domain2);
 
   vardoms[varIndex1] = result;
   vardoms[varIndex2] = result;
 
-  ASSERT_LOG(LOG_FLAG_PROPSTEPS, log => log('propagator_eqStepBare; indexes:', varIndex1, varIndex2, 'doms:', domain__debug(domain1), 'eq', domain__debug(domain2), '->', domain__debug(result)));
+  ASSERT_LOG(LOG_FLAG_PROPSTEPS, log =>
+    log(
+      'propagator_eqStepBare; indexes:',
+      varIndex1,
+      varIndex2,
+      'doms:',
+      domain__debug(domain1),
+      'eq',
+      domain__debug(domain2),
+      '->',
+      domain__debug(result)
+    )
+  );
   ASSERT_NORDOM(space.vardoms[varIndex1], true, domain__debug);
   ASSERT_NORDOM(space.vardoms[varIndex2], true, domain__debug);
 }
@@ -67,14 +74,18 @@ function propagator_eqStepWouldReject(domain1, domain2) {
   ASSERT_NORDOM(domain2);
   ASSERT(domain1 && domain2, 'NON_EMPTY_DOMAIN_EXPECTED');
 
-  let result = domain_sharesNoElements(domain1, domain2);
-  ASSERT_LOG(LOG_FLAG_PROPSTEPS, log => log('propagator_eqStepWouldReject;', domain__debug(domain1), '!==', domain__debug(domain2), '->', result));
+  const result = domain_sharesNoElements(domain1, domain2);
+  ASSERT_LOG(LOG_FLAG_PROPSTEPS, log =>
+    log(
+      'propagator_eqStepWouldReject;',
+      domain__debug(domain1),
+      '!==',
+      domain__debug(domain2),
+      '->',
+      result
+    )
+  );
   return result;
 }
 
-// BODY_STOP
-
-export {
-  propagator_eqStepBare,
-  propagator_eqStepWouldReject,
-};
+export { propagator_eqStepBare, propagator_eqStepWouldReject };
