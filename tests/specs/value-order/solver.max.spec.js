@@ -1,10 +1,8 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
+import FDO from '../../../src/index';
 
-import FDO from '../../../src/fdo';
+describe('fdo/solver.max.spec', () => {
 
-describe('fdo/solver.max.spec', function() {
-
-  it('should do base case', function() {
+  test('should do base case', () => {
     let solution = FDO.solve(`
       : A [1 99]
       : B 0
@@ -13,6 +11,6 @@ describe('fdo/solver.max.spec', function() {
       @custom val-strat max
     `);
 
-    expect(solution.A).to.eql(99); // not 1.
+    expect(solution.A).toBe(99); // not 1.
   });
 });

@@ -1,14 +1,13 @@
 // markov helper functions
 
 import {
-  THROW,
-} from '../../fdlib/src/helpers';
-import {
-  domain_toList,
   domain_getValue,
-} from '../../fdlib/src/domain';
+  domain_toList,
+} from 'fdlib/src/domain';
 
-// BODY_START
+import {
+  THROW,
+} from 'fdlib/src/helpers';
 
 /**
  * If a row has no boolean condition, return it.
@@ -79,8 +78,6 @@ function markov_createProbVector(space, matrix, expandVectorsWith, valueCount) {
   }
   return probVector;
 }
-
-// BODY_STOP
 
 export {
   markov_createLegend,

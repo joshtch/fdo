@@ -1,10 +1,11 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_invMul,
@@ -12,9 +13,7 @@ import {
   domain_minus,
   domain_mul,
   domain_plus,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * @param {$space} space
@@ -65,9 +64,8 @@ function _propagator_ringStepBare(domain1, domain2, domainResult, opFunc, opName
   return domain_intersection(domainResult, domain);
 }
 
-// BODY_STOP
-
-export default propagator_ringStepBare;
 export {
+  propagator_ringStepBare,
   _propagator_ringStepBare, // testing
 };
+export default propagator_ringStepBare;

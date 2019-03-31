@@ -1,4 +1,3 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   fixt_arrdom_range,
   fixt_arrdom_ranges,
@@ -6,20 +5,22 @@ import {
   fixt_dom_nums,
   fixt_dom_range,
   fixt_dom_solved,
-} from '../../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 
 import {
-  LOG_FLAG_PROPSTEPS,
-  LOG_FLAG_NONE,
   SUB,
   SUP,
-
+} from 'fdlib/src/constants';
+import {
   ASSERT_SET_LOG,
-} from '../../../../fdlib/src/helpers';
+  LOG_FLAG_PROPSTEPS,
+  LOG_FLAG_NONE,
+} from 'fdlib/src/assert';
+
 import {
   domain_minus,
   domain_plus,
-} from '../../../../fdlib/src/domain';
+} from 'fdlib/src/domain';
 
 import {
   config_addVarDomain,
@@ -34,45 +35,45 @@ import {
   _propagator_ringStepBare,
 } from '../../../src/propagators/ring';
 
-describe('fdo/propagators/ring.spec', function() {
+describe('fdo/propagators/ring.spec', () => {
 
-  it('should prevent this regression', function() {
+  test('should prevent this regression', () => {
     let A = fixt_dom_nums(1);
     let B = fixt_dom_nums(1);
     let C = fixt_dom_range(0, 1);
 
     let S = _propagator_ringStepBare(A, B, C, domain_minus, 'min');
 
-    expect(S).to.eql(fixt_dom_solved(0));
+    expect(S).toEqual(fixt_dom_solved(0));
   });
 
-  it('should add two numbers', function() {
+  test('should add two numbers', () => {
     let A = fixt_dom_nums(1);
     let B = fixt_dom_nums(1);
     let C = fixt_dom_range(0, 10);
 
     let S = _propagator_ringStepBare(A, B, C, domain_plus, 'plus');
 
-    expect(S).to.eql(fixt_dom_solved(2));
+    expect(S).toEqual(fixt_dom_solved(2));
   });
 
-  it('should reject if result is not in result domain', function() {
+  test('should reject if result is not in result domain', () => {
     let A = fixt_dom_nums(1);
     let B = fixt_dom_nums(1);
     let C = fixt_dom_range(0, 1);
 
     let S = _propagator_ringStepBare(A, B, C, domain_plus, 'plus');
 
-    expect(S).to.eql(fixt_dom_empty());
+    expect(S).toEqual(fixt_dom_empty());
   });
 
-  describe('with LOG', function() {
+  describe('with LOG', () => {
 
-    before(function() {
+    beforeAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_PROPSTEPS);
     });
 
-    it('should improve test coverage by enabling logging', function() {
+    test('should improve test coverage by enabling logging', () => {
       let config = config_create();
       config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
       config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
@@ -86,10 +87,10 @@ describe('fdo/propagators/ring.spec', function() {
 
       propagator_ringStepBare(space, config, A, B, C, 'plus', domain_plus);
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    after(function() {
+    afterAll(function() {
       ASSERT_SET_LOG(LOG_FLAG_NONE);
     });
   });

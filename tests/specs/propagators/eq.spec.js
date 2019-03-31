@@ -1,4 +1,3 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   fixt_arrdom_nums,
   fixt_arrdom_range,
@@ -10,16 +9,17 @@ import {
   fixt_dom_ranges,
   fixt_dom_solved,
   fixt_domainEql,
-} from '../../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 
 import {
-  LOG_FLAG_PROPSTEPS,
-  LOG_FLAG_NONE,
   SUB,
   SUP,
-
+} from 'fdlib/src/constants';
+import {
   ASSERT_SET_LOG,
-} from '../../../../fdlib/src/helpers';
+  LOG_FLAG_PROPSTEPS,
+  LOG_FLAG_NONE,
+} from 'fdlib/src/assert';
 
 import {
   config_addVarDomain,
@@ -35,29 +35,29 @@ import {
   propagator_eqStepWouldReject,
 } from '../../../src/propagators/eq';
 
-describe('fdo/propagators/eq.spec', function() {
+describe('fdo/propagators/eq.spec', () => {
 
-  describe('propagator_eqStepBare', function() {
+  describe('propagator_eqStepBare', () => {
     // in general after call v1 and v2 should be equal
 
-    it('should exist', function() {
-      expect(propagator_eqStepBare).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof propagator_eqStepBare).toBe('function');
     });
 
-    it('should expect args', function() {
+    test('should expect args', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 11, 15);
       config_addVarRange(config, 'B', 5, 8);
       let space = space_createRoot();
       space_initFromConfig(space, config);
 
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('B'))).not.to.throw();
-      expect(_ => propagator_eqStepBare(space, config)).to.throw('VAR_INDEX_SHOULD_BE_NUMBER');
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'))).to.throw('VAR_INDEX_SHOULD_BE_NUMBER');
-      expect(_ => propagator_eqStepBare(space, config, undefined, config.allVarNames.indexOf('B'))).to.throw('VAR_INDEX_SHOULD_BE_NUMBER');
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('B')) }).not.toThrowError();
+      expect(_ => { propagator_eqStepBare(space, config) }).toThrowError('VAR_INDEX_SHOULD_BE_NUMBER');
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('A')) }).toThrowError('VAR_INDEX_SHOULD_BE_NUMBER');
+      expect(_ => { propagator_eqStepBare(space, config, undefined, config.allVarNames.indexOf('B')) }).toThrowError('VAR_INDEX_SHOULD_BE_NUMBER');
     });
 
-    it('should throw for empty domains', function() {
+    test('should throw for empty domains', () => {
       let config = config_create();
       config_addVarRange(config, 'A', 9, 10);
       config_addVarRange(config, 'B', 11, 15);
@@ -68,45 +68,51 @@ describe('fdo/propagators/eq.spec', function() {
       space.vardoms[config.allVarNames.indexOf('C')] = fixt_dom_empty();
       space.vardoms[config.allVarNames.indexOf('D')] = fixt_dom_empty();
 
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('B'))).not.to.throw();
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('D'))).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('C'), config.allVarNames.indexOf('B'))).to.throw('SHOULD_NOT_BE_REJECTED');
-      expect(_ => propagator_eqStepBare(space, config, config.allVarNames.indexOf('C'), config.allVarNames.indexOf('D'))).to.throw('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('B')) }).not.toThrowError();
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('A'), config.allVarNames.indexOf('D')) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('C'), config.allVarNames.indexOf('B')) }).toThrowError('SHOULD_NOT_BE_REJECTED');
+      expect(_ => { propagator_eqStepBare(space, config, config.allVarNames.indexOf('C'), config.allVarNames.indexOf('D')) }).toThrowError('SHOULD_NOT_BE_REJECTED');
     });
 
-    it('with array should split a domain if it covers multiple ranges of other domain', function() {
-      let config = config_create();
-      config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
-      config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
-      let space = space_createRoot();
-      space_initFromConfig(space, config);
-      let A = config.allVarNames.indexOf('A');
-      let B = config.allVarNames.indexOf('B');
+    test(
+      'with array should split a domain if it covers multiple ranges of other domain',
+      () => {
+        let config = config_create();
+        config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
+        config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
+        let space = space_createRoot();
+        space_initFromConfig(space, config);
+        let A = config.allVarNames.indexOf('A');
+        let B = config.allVarNames.indexOf('B');
 
-      propagator_eqStepBare(space, config, A, B);
-      expect(space.vardoms[A]).to.eql(fixt_dom_ranges([0, 10], [20, 300]));
-      expect(space.vardoms[B]).to.eql(fixt_dom_ranges([0, 10], [20, 300]));
-    });
+        propagator_eqStepBare(space, config, A, B);
+        expect(space.vardoms[A]).toEqual(fixt_dom_ranges([0, 10], [20, 300]));
+        expect(space.vardoms[B]).toEqual(fixt_dom_ranges([0, 10], [20, 300]));
+      }
+    );
 
-    it('with number should split a domain if it covers multiple ranges of other domain', function() {
-      let config = config_create();
-      config_addVarRange(config, 'A', SUB, 15);
-      config_addVarDomain(config, 'B', fixt_arrdom_nums(0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15));
-      let space = space_createRoot();
-      space_initFromConfig(space, config);
-      let A = config.allVarNames.indexOf('A');
-      let B = config.allVarNames.indexOf('B');
+    test(
+      'with number should split a domain if it covers multiple ranges of other domain',
+      () => {
+        let config = config_create();
+        config_addVarRange(config, 'A', SUB, 15);
+        config_addVarDomain(config, 'B', fixt_arrdom_nums(0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15));
+        let space = space_createRoot();
+        space_initFromConfig(space, config);
+        let A = config.allVarNames.indexOf('A');
+        let B = config.allVarNames.indexOf('B');
 
-      let C = fixt_dom_nums(0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15);
+        let C = fixt_dom_nums(0, 1, 2, 3, 4, 5, 10, 11, 12, 13, 14, 15);
 
-      propagator_eqStepBare(space, config, A, B);
-      expect(space.vardoms[B]).to.eql(C);
-      expect(space.vardoms[A]).to.eql(C);
-    });
+        propagator_eqStepBare(space, config, A, B);
+        expect(space.vardoms[B]).toEqual(C);
+        expect(space.vardoms[A]).toEqual(C);
+      }
+    );
 
-    describe('when v1 == v2', function() {
-      function test(domain) {
-        it(`should not change anything: ${domain}`, function() {
+    describe('when v1 == v2', () => {
+      function testThis(domain) {
+        test(`should not change anything: ${domain}`, () => {
           let config = config_create();
           config_addVarDomain(config, 'A', fixt_dom_clone(domain, 'array'));
           config_addVarDomain(config, 'B', fixt_dom_clone(domain, 'array'));
@@ -122,72 +128,78 @@ describe('fdo/propagators/eq.spec', function() {
         });
       }
 
-      describe('with array', function() {
-        test(fixt_arrdom_range(SUP, SUP));
-        test(fixt_arrdom_range(20, 50));
-        test(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]));
-        test(fixt_arrdom_ranges([0, 10], [25, 25], [40, 50]));
+      describe('with array', () => {
+        testThis(fixt_arrdom_range(SUP, SUP));
+        testThis(fixt_arrdom_range(20, 50));
+        testThis(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]));
+        testThis(fixt_arrdom_ranges([0, 10], [25, 25], [40, 50]));
       });
 
-      describe('with numbers', function() {
-        test(fixt_dom_nums(SUB, SUB));
-        test(fixt_dom_nums(0, 0));
-        test(fixt_dom_nums(1, 1));
-        test(fixt_dom_nums(0, 1));
-        test(fixt_dom_nums(0, 2));
-        test(fixt_dom_nums(0, 2, 3));
+      describe('with numbers', () => {
+        testThis(fixt_dom_nums(SUB, SUB));
+        testThis(fixt_dom_nums(0, 0));
+        testThis(fixt_dom_nums(1, 1));
+        testThis(fixt_dom_nums(0, 1));
+        testThis(fixt_dom_nums(0, 2));
+        testThis(fixt_dom_nums(0, 2, 3));
       });
     });
 
-    describe('when v1 != v2', function() {
+    describe('when v1 != v2', () => {
 
-      function test(left, right, result) {
-        it(`should not change anything (left-right): ${[left, right, result].join('|')}`, function() {
-          let config = config_create();
-          config_addVarDomain(config, 'A', fixt_dom_clone(left, 'array'));
-          config_addVarDomain(config, 'B', fixt_dom_clone(right, 'array'));
-          let space = space_createRoot();
-          space_initFromConfig(space, config);
-          let A = config.allVarNames.indexOf('A');
-          let B = config.allVarNames.indexOf('B');
+      function testThis(left, right, result) {
+        test(
+          `should not change anything (left-right): ${[left, right, result].join('|')}`,
+          () => {
+            let config = config_create();
+            config_addVarDomain(config, 'A', fixt_dom_clone(left, 'array'));
+            config_addVarDomain(config, 'B', fixt_dom_clone(right, 'array'));
+            let space = space_createRoot();
+            space_initFromConfig(space, config);
+            let A = config.allVarNames.indexOf('A');
+            let B = config.allVarNames.indexOf('B');
 
-          propagator_eqStepBare(space, config, A, B);
-          expect(space.vardoms[A]).to.eql(result);
-          expect(space.vardoms[B]).to.eql(result);
-        });
+            propagator_eqStepBare(space, config, A, B);
+            expect(space.vardoms[A]).toEqual(result);
+            expect(space.vardoms[B]).toEqual(result);
+          }
+        );
 
-        it(`should not change anything (right-left): ${[right, left, result].join('|')}`, function() {
-          let config = config_create();
-          config_addVarDomain(config, 'A', fixt_dom_clone(right, 'array'));
-          config_addVarDomain(config, 'B', fixt_dom_clone(left, 'array'));
-          let space = space_createRoot();
-          space_initFromConfig(space, config);
-          let A = config.allVarNames.indexOf('A');
-          let B = config.allVarNames.indexOf('B');
+        test(
+          `should not change anything (right-left): ${[right, left, result].join('|')}`,
+          () => {
+            let config = config_create();
+            config_addVarDomain(config, 'A', fixt_dom_clone(right, 'array'));
+            config_addVarDomain(config, 'B', fixt_dom_clone(left, 'array'));
+            let space = space_createRoot();
+            space_initFromConfig(space, config);
+            let A = config.allVarNames.indexOf('A');
+            let B = config.allVarNames.indexOf('B');
 
-          propagator_eqStepBare(space, config, A, B);
-          expect(space.vardoms[A]).to.eql(result);
-          expect(space.vardoms[B]).to.eql(result);
-        });
+            propagator_eqStepBare(space, config, A, B);
+            expect(space.vardoms[A]).toEqual(result);
+            expect(space.vardoms[B]).toEqual(result);
+          }
+        );
       }
 
-      test(fixt_dom_nums(0, 1), fixt_dom_nums(0, 0), fixt_dom_solved(0));
-      test(fixt_dom_nums(0, 1), fixt_dom_nums(1, 1), fixt_dom_solved(1));
-      test(fixt_dom_nums(SUB, 1), fixt_arrdom_range(1, SUP), fixt_dom_solved(1));
-      test(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_dom_nums(5, 5), fixt_dom_solved(5));
-      test(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_arrdom_ranges([5, 15], [25, 35]), fixt_dom_nums(5, 6, 7, 8, 9, 10, 25, 26, 27, 28, 29, 30));
-      test(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_arrdom_ranges([SUB, SUP]), fixt_dom_ranges([0, 10], [20, 30], [40, 50]));
-      test(fixt_dom_nums(0, 2), fixt_dom_nums(1, 3), fixt_dom_empty());
-      test(fixt_dom_nums(0, 2), fixt_dom_nums(1, 2, 4), fixt_dom_solved(2));
+      testThis(fixt_dom_nums(0, 1), fixt_dom_nums(0, 0), fixt_dom_solved(0));
+      testThis(fixt_dom_nums(0, 1), fixt_dom_nums(1, 1), fixt_dom_solved(1));
+      testThis(fixt_dom_nums(SUB, 1), fixt_arrdom_range(1, SUP), fixt_dom_solved(1));
+      testThis(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_dom_nums(5, 5), fixt_dom_solved(5));
+      testThis(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_arrdom_ranges([5, 15], [25, 35]), fixt_dom_nums(5, 6, 7, 8, 9, 10, 25, 26, 27, 28, 29, 30));
+      testThis(fixt_arrdom_ranges([0, 10], [20, 30], [40, 50]), fixt_arrdom_ranges([SUB, SUP]), fixt_dom_ranges([0, 10], [20, 30], [40, 50]));
+      testThis(fixt_dom_nums(0, 2), fixt_dom_nums(1, 3), fixt_dom_empty());
+      testThis(fixt_dom_nums(0, 2), fixt_dom_nums(1, 2, 4), fixt_dom_solved(2));
     });
 
-    describe('with LOG', function() {
+    describe('with LOG', () => {
 
-      before(function() {
+      beforeAll(function() {
         ASSERT_SET_LOG(LOG_FLAG_PROPSTEPS);
       });
 
-      it('should improve test coverage by enabling logging', function() {
+      test('should improve test coverage by enabling logging', () => {
         let config = config_create();
         config_addVarDomain(config, 'A', fixt_arrdom_range(SUB, SUP));
         config_addVarDomain(config, 'B', fixt_arrdom_ranges([0, 10], [20, 300]));
@@ -199,24 +211,24 @@ describe('fdo/propagators/eq.spec', function() {
 
         propagator_eqStepBare(space, config, A, B);
 
-        expect(true).to.eql(true);
+        expect(true).toBe(true);
       });
 
-      after(function() {
+      afterAll(function() {
         ASSERT_SET_LOG(LOG_FLAG_NONE);
       });
     });
   });
 
-  describe('propagator_eqStepWouldReject', function() {
+  describe('propagator_eqStepWouldReject', () => {
 
-    it('should exist', function() {
-      expect(propagator_eqStepWouldReject).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof propagator_eqStepWouldReject).toBe('function');
     });
 
-    it('regression', function() {
-      expect(propagator_eqStepWouldReject(fixt_dom_range(1, 64), fixt_dom_nums(1))).to.eql(false);
-      expect(propagator_eqStepWouldReject(fixt_dom_range(1, 64), fixt_dom_solved(1))).to.eql(false);
+    test('regression', () => {
+      expect(propagator_eqStepWouldReject(fixt_dom_range(1, 64), fixt_dom_nums(1))).toBe(false);
+      expect(propagator_eqStepWouldReject(fixt_dom_range(1, 64), fixt_dom_solved(1))).toBe(false);
     });
   });
 });

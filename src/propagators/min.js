@@ -1,19 +1,17 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
+  LOG_FLAG_PROPSTEPS,
   TRACE,
-} from '../../../fdlib/src/helpers';
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_isEmpty,
   domain_intersection,
   domain_minus,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * Min as in minus. Only updates the result domain.
@@ -60,9 +58,5 @@ function _propagator_minStep(domain1, domain2, domResult) {
   return domain_intersection(domResult, domain);
 }
 
-// BODY_STOP
-
+export { propagator_minStep, _propagator_minStep };
 export default propagator_minStep;
-export {
-  _propagator_minStep, // testing
-};

@@ -4,18 +4,18 @@
 // see importer.js to parse this DSL
 
 import {
-  getTerm,
   THROW,
-} from '../../fdlib/src/helpers';
+  getTerm,
+} from 'fdlib/src/helpers';
+
 import {
   domain_getValue,
   domain_toArr,
-} from '../../fdlib/src/domain';
+} from 'fdlib/src/domain';
+
 import {
   trie_get,
-} from '../../fdlib/src/trie';
-
-// BODY_START
+} from 'fdlib/src/trie';
 
 /**
  * Export a given config with optional target domains
@@ -335,9 +335,5 @@ function exporter_domstr(domain) {
   return '[' + arrdom.join(' ') + ']';
 }
 
-// BODY_STOP
-
+export { exporter_main, exporter_encodeVarName };
 export default exporter_main;
-export {
-  exporter_encodeVarName,
-};

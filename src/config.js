@@ -5,16 +5,34 @@
 // This prevents leaking the small domain artifact outside of the library.
 
 import {
-  SUB,
-  SUP,
-
   ASSERT,
   ASSERT_NORDOM,
   ASSERT_VARDOMS_SLOW,
-  getTerm,
+} from 'fdlib/src/assert';
+
+import {
+  NOT_FOUND,
+  SUB,
+  SUP,
+} from 'fdlib/src/constants';
+
+import {
+  domain__debug,
+  domain_createRange,
+  domain_getValue,
+  domain_max,
+  domain_min,
+  domain_isSolved,
+  domain_toSmallest,
+  domain_anyToSmallest,
+} from 'fdlib/src/domain';
+
+import {
   INSPECT,
   THROW,
-} from '../../fdlib/src/helpers';
+  getTerm,
+} from 'fdlib/src/helpers';
+
 import {
   TRIE_KEY_NOT_FOUND,
 
@@ -22,7 +40,14 @@ import {
   trie_create,
   trie_get,
   trie_has,
-} from '../../fdlib/src/trie';
+} from 'fdlib/src/trie';
+
+import {
+  constraint_create,
+} from './constraint';
+
+import distribution_getDefaults from './distribution/defaults';
+
 import {
   propagator_addDistinct,
   propagator_addDiv,
@@ -41,24 +66,6 @@ import {
   propagator_addRingMul,
   propagator_addSum,
 } from './propagator';
-import {
-  NOT_FOUND,
-
-  domain__debug,
-  domain_createRange,
-  domain_getValue,
-  domain_max,
-  domain_min,
-  domain_isSolved,
-  domain_toSmallest,
-  domain_anyToSmallest,
-} from '../../fdlib/src/domain';
-import {
-  constraint_create,
-} from './constraint';
-import distribution_getDefaults from './distribution/defaults';
-
-// BODY_START
 
 /**
  * @returns {$config}
@@ -844,8 +851,6 @@ function config_init(config) {
 
   ASSERT(config._varToPropagators, 'should have generated hash');
 }
-
-// BODY_STOP
 
 export {
   config_addConstraint,

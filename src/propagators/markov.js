@@ -1,23 +1,22 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_createEmpty,
   domain_isSolved,
   domain_min,
-} from '../../../fdlib/src/domain';
+} from 'fdlib/src/domain';
 
 import {
   markov_createLegend,
   markov_createProbVector,
 } from '../markov';
-
-// BODY_START
 
 /**
  * Markov uses a special system for trying values. The domain doesn't
@@ -73,6 +72,5 @@ function propagator_markovStepBare(space, config, varIndex) {
   ASSERT_NORDOM(space.vardoms[varIndex], true, domain__debug);
 }
 
-// BODY_STOP
-
+export { propagator_markovStepBare };
 export default propagator_markovStepBare;

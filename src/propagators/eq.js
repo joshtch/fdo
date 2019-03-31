@@ -1,17 +1,16 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_intersection,
   domain_sharesNoElements,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * This eq propagator looks a lot different from neq because in
@@ -71,8 +70,6 @@ function propagator_eqStepWouldReject(domain1, domain2) {
   ASSERT_LOG(LOG_FLAG_PROPSTEPS, log => log('propagator_eqStepWouldReject;', domain__debug(domain1), '!==', domain__debug(domain2), '->', result));
   return result;
 }
-
-// BODY_STOP
 
 export {
   propagator_eqStepBare,

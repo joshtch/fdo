@@ -1,19 +1,21 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
+import {
+  NO_SUCH_VALUE,
+} from 'fdlib/src/constants';
+
 import {
   domain__debug,
   domain_createEmpty,
   domain_getValue,
   domain_removeValue,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * @param {$space} space
@@ -70,8 +72,6 @@ function propagator_neqStepWouldReject(domain1, domain2) {
   ASSERT_LOG(LOG_FLAG_PROPSTEPS, log => log('propagator_neqStepWouldReject;', domain__debug(domain1), '===', domain__debug(domain2), '->', result));
   return result;
 }
-
-// BODY_STOP
 
 export {
   propagator_neqStepBare,

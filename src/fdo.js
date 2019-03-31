@@ -1,22 +1,40 @@
 import {
-  LOG_NONE,
-  LOG_FLAG_SOLUTIONS,
-  LOG_STATS,
-  LOG_SOLVES,
-  LOG_MAX,
-  LOG_MIN,
-  SUB,
-  SUP,
-
   ASSERT,
   ASSERT_ARRDOM,
   ASSERT_LOG,
   ASSERT_VARDOMS_SLOW,
-  getTerm,
+
+  LOG_FLAG_SOLUTIONS,
+  LOG_MAX,
+  LOG_MIN,
+  LOG_NONE,
+  LOG_SOLVES,
+  LOG_STATS,
+} from 'fdlib/src/assert';
+
+import {
+  SUB,
+  SUP,
+} from 'fdlib/src/constants';
+
+import {
+  domain__debug,
+  domain_anyToSmallest,
+  domain_createEmpty,
+  domain_fromListToArrdom,
+  domain_isEmpty,
+} from 'fdlib/src/domain';
+
+import {
   INSPECT,
-  setTerm,
   THROW,
-} from '../../fdlib/src/helpers';
+  getTerm,
+  setTerm,
+} from 'fdlib/src/helpers';
+
+import {
+  trie_get,
+} from 'fdlib/src/trie';
 
 import {
   config_addConstraint,
@@ -26,18 +44,12 @@ import {
   config_init,
   config_setOption,
 } from './config';
+
 import exporter_main, {
   exporter_encodeVarName,
 } from './exporter';
-import importer_main from './importer';
 
-import {
-  domain__debug,
-  domain_createEmpty,
-  domain_fromListToArrdom,
-  domain_isEmpty,
-  domain_anyToSmallest,
-} from '../../fdlib/src/domain';
+import importer_main from './importer';
 
 import search_depthFirst from './search';
 
@@ -46,12 +58,6 @@ import {
   space_solution,
   space_toConfig,
 } from './space';
-
-import {
-  trie_get,
-} from '../../fdlib/src/trie';
-
-// BODY_START
 
 /**
  * Finite Domain brute force solver Only
@@ -384,7 +390,7 @@ class FDO {
    * @param {Object} [options={}] See @solve
    * @param {number} log One of the LOG_* constants
    */
-  _prepare(options, log) {
+  _prepare(options = {}, log) {
     ASSERT(log === undefined || log >= LOG_MIN && log <= LOG_MAX, 'log level should be a valid value or be undefined (in tests)');
     if (log >= LOG_STATS) {
       getTerm().log('      - FD Preparing...');
@@ -783,6 +789,5 @@ function solver_getSolutions(solvedSpaces, config, solutions, log) {
   }
 }
 
-// BODY_STOP
-
+export { FDO };
 export default FDO;

@@ -45,14 +45,11 @@ https://en.wikipedia.org/wiki/Markov_chain#Music
 
 */
 
-import {
-  ASSERT,
-} from '../../../fdlib/src/helpers';
+import { ASSERT } from 'fdlib/src/assert';
+
 import {
   domain_containsValue,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * Given a domain, probability vector, value legend, and rng
@@ -137,6 +134,5 @@ function _distribution_markovRoll(rng, totalProb, cumulativeProbVector, valueLeg
   return valueLegend[index];
 }
 
-// BODY_STOP
-
+export { distribution_markovSampleNextFromDomain };
 export default distribution_markovSampleNextFromDomain;

@@ -1,10 +1,8 @@
-import expect from '../../../../fdlib/tests/lib/mocha_proxy.fixt';
+import FDO from '../../../src/index';
 
-import FDO from '../../../src/fdo';
+describe('fdo/solver.min.spec', () => {
 
-describe('fdo/solver.min.spec', function() {
-
-  it('should do base case', function() {
+  test('should do base case', () => {
     let solution = FDO.solve(`
       : A [1 99]
       : B 0
@@ -13,6 +11,6 @@ describe('fdo/solver.min.spec', function() {
       @custom val-strat min
     `);
 
-    expect(solution.A).to.eql(1); // (kind of the default strat)
+    expect(solution.A).toBe(1); // (kind of the default strat)
   });
 });

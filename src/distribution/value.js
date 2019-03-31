@@ -6,14 +6,15 @@ new choice left it should return undefined to signify the end.
 */
 
 import {
-  LOG_FLAG_CHOICE,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-  THROW,
-} from '../../../fdlib/src/helpers';
+  LOG_FLAG_CHOICE,
+} from 'fdlib/src/assert';
+
+import {
+  NO_SUCH_VALUE,
+} from 'fdlib/src/constants';
 
 import {
   domain__debug,
@@ -27,7 +28,11 @@ import {
   domain_middleElement,
   domain_min,
   domain_removeValue,
-} from '../../../fdlib/src/domain';
+} from 'fdlib/src/domain';
+
+import {
+  THROW,
+} from 'fdlib/src/helpers';
 
 import distribution_markovSampleNextFromDomain from './markov';
 
@@ -35,8 +40,6 @@ import {
   markov_createLegend,
   markov_createProbVector,
 } from '../markov';
-
-// BODY_START
 
 const FIRST_CHOICE = 0;
 const SECOND_CHOICE = 1;
@@ -462,8 +465,6 @@ function distribution_valueByMarkov(space, config, varIndex, choiceIndex) {
   return NO_CHOICE;
 }
 
-// BODY_STOP
-
 export default distribute_getNextDomainForVar;
 export {
   FIRST_CHOICE,
@@ -471,9 +472,7 @@ export {
   THIRD_CHOICE,
   NO_CHOICE,
 
-  // __REMOVE_BELOW_FOR_DIST__
   // for testing:
-  _distribute_getNextDomainForVar,
   distribution_valueByList,
   distribution_valueByMarkov,
   distribution_valueByMax,
@@ -482,5 +481,5 @@ export {
   distribution_valueByMinMaxCycle,
   distribution_valueBySplitMax,
   distribution_valueBySplitMin,
-  // __REMOVE_ABOVE_FOR_DIST__
+  _distribute_getNextDomainForVar,
 };

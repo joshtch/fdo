@@ -1,14 +1,13 @@
-import expect from '../../../fdlib/tests/lib/mocha_proxy.fixt';
 import {
   fixt_arrdom_range,
   fixt_dom_nums,
   fixt_dom_range,
-} from '../../../fdlib/tests/lib/domain.fixt';
+} from 'fdlib/tests/lib/domain.fixt';
 
 import {
   SUB,
   SUP,
-} from '../../../fdlib/src/helpers';
+} from 'fdlib/src/constants';
 
 import {
   config_addConstraint,
@@ -25,98 +24,98 @@ import {
   config_setOption,
 } from '../../src/config';
 
-describe('fdo/config.spec', function() {
+describe('fdo/config.spec', () => {
 
-  describe('config_addConstraint', function() {
+  describe('config_addConstraint', () => {
 
-    it('should exist', function() {
-      expect(config_addConstraint).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addConstraint).toBe('function');
     });
 
-    it('should throw for unknown names', function() {
+    test('should throw for unknown names', () => {
       let config = config_create();
-      expect(_ => config_addConstraint(config, 'crap', [])).to.throw('UNKNOWN_PROPAGATOR');
+      expect(_ => { config_addConstraint(config, 'crap', []) }).toThrowError('UNKNOWN_PROPAGATOR');
     });
   });
 
-  describe('config_create', function() {
+  describe('config_create', () => {
 
-    it('should return an object', function() {
-      expect(config_create()).to.be.an('object');
+    test('should return an object', () => {
+      expect(typeof config_create()).toBe('object');
     });
   });
 
-  describe('config_addVarAnonConstant', function() {
+  describe('config_addVarAnonConstant', () => {
 
-    it('should add the value', function() {
+    test('should add the value', () => {
       let config = config_create();
       let varIndex = config_addVarAnonConstant(config, 15);
 
-      expect(config.allVarNames[varIndex]).to.be.a('string');
-      expect(config.initialDomains[varIndex]).to.eql(fixt_dom_nums(15));
+      expect(typeof config.allVarNames[varIndex]).toBe('string');
+      expect(config.initialDomains[varIndex]).toEqual(fixt_dom_nums(15));
     });
 
-    it('should populate the constant cache', function() {
+    test('should populate the constant cache', () => {
       let config = config_create();
       let varIndex = config_addVarAnonConstant(config, 15);
 
-      expect(config.constantCache[15]).to.equal(varIndex);
+      expect(config.constantCache[15]).toBe(varIndex);
     });
 
-    it('should reuse the constant cache if available', function() {
+    test('should reuse the constant cache if available', () => {
       let config = config_create();
       let index1 = config_addVarAnonConstant(config, 1);
       let index2 = config_addVarAnonConstant(config, 2);
       let index3 = config_addVarAnonConstant(config, 1);
 
-      expect(index1).to.not.equal(index2);
-      expect(index1).to.equal(index3);
+      expect(index1).not.toBe(index2);
+      expect(index1).toBe(index3);
     });
   });
 
-  describe('config_addVarAnonNothing', function() {
+  describe('config_addVarAnonNothing', () => {
 
-    it('should exist', function() {
-      expect(config_addVarAnonNothing).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarAnonNothing).toBe('function');
     });
 
-    it('should create a new var with max range', function() {
+    test('should create a new var with max range', () => {
       let config = config_create();
 
       config_addVarAnonNothing(config);
 
-      expect(config.allVarNames.length).to.equal(1);
-      expect(config.initialDomains[0]).to.eql(fixt_dom_range(SUB, SUP));
+      expect(config.allVarNames.length).toBe(1);
+      expect(config.initialDomains[0]).toEqual(fixt_dom_range(SUB, SUP));
     });
   });
 
-  describe('config_addVarAnonRange', function() {
+  describe('config_addVarAnonRange', () => {
 
-    it('should exist', function() {
-      expect(config_addVarAnonRange).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarAnonRange).toBe('function');
     });
 
-    it('should throw if hi is missing', function() {
+    test('should throw if hi is missing', () => {
       let config = config_create();
 
-      expect(_ => config_addVarAnonRange(config, 15)).to.throw('A_HI_MUST_BE_NUMBER');
+      expect(_ => { config_addVarAnonRange(config, 15) }).toThrowError('A_HI_MUST_BE_NUMBER');
     });
 
-    it('should throw if lo is missing', function() {
+    test('should throw if lo is missing', () => {
       let config = config_create();
 
-      expect(_ => config_addVarAnonRange(config, undefined, 15)).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarAnonRange(config, undefined, 15) }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    it('should throw if lo is an array', function() {
+    test('should throw if lo is an array', () => {
       let config = config_create();
 
-      expect(_ => config_addVarAnonRange(config, [15, 30], 15)).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarAnonRange(config, [15, 30], 15) }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    describe('with array', function() {
+    describe('with array', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         let lo = 50;
@@ -124,11 +123,11 @@ describe('fdo/config.spec', function() {
 
         config_addVarAnonRange(config, lo, hi);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(lo, hi));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(lo, hi));
       });
 
-      it('should make a constant if lo=hi', function() {
+      test('should make a constant if lo=hi', () => {
         let config = config_create();
 
         let lo = 58778;
@@ -136,15 +135,15 @@ describe('fdo/config.spec', function() {
 
         let varIndex = config_addVarAnonRange(config, lo, hi);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(lo, hi));
-        expect(config.constantCache[lo]).to.eql(varIndex);
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(lo, hi));
+        expect(config.constantCache[lo]).toEqual(varIndex);
       });
     });
 
-    describe('with numbers', function() {
+    describe('with numbers', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         let lo = 5;
@@ -152,11 +151,11 @@ describe('fdo/config.spec', function() {
 
         config_addVarAnonRange(config, lo, hi);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(lo, hi));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(lo, hi));
       });
 
-      it('should make a constant if lo=hi', function() {
+      test('should make a constant if lo=hi', () => {
         let config = config_create();
 
         let lo = 28;
@@ -164,331 +163,337 @@ describe('fdo/config.spec', function() {
 
         let varIndex = config_addVarAnonRange(config, lo, hi);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(lo, hi));
-        expect(config.constantCache[lo]).to.eql(varIndex);
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(lo, hi));
+        expect(config.constantCache[lo]).toEqual(varIndex);
       });
     });
   });
 
-  describe('config_addVarConstant', function() {
+  describe('config_addVarConstant', () => {
 
-    it('should exist', function() {
-      expect(config_addVarConstant).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarConstant).toBe('function');
     });
 
-    it('should throw for passing on undefined', function() {
+    test('should throw for passing on undefined', () => {
       let config = config_create();
 
-      expect(_ => config_addVarConstant(config, 'A', undefined)).to.throw('A_VALUE_SHOULD_BE_NUMBER');
+      expect(_ => { config_addVarConstant(config, 'A', undefined) }).toThrowError('A_VALUE_SHOULD_BE_NUMBER');
     });
 
-    it('should throw for passing on an array', function() {
+    test('should throw for passing on an array', () => {
       let config = config_create();
 
-      expect(_ => config_addVarConstant(config, 'A', [10, 15])).to.throw('A_VALUE_SHOULD_BE_NUMBER');
+      expect(_ => { config_addVarConstant(config, 'A', [10, 15]) }).toThrowError('A_VALUE_SHOULD_BE_NUMBER');
     });
 
-    it('should throw for passing on a string', function() {
+    test('should throw for passing on a string', () => {
       let config = config_create();
 
-      expect(_ => config_addVarConstant(config, 'A', '23')).to.throw('A_VALUE_SHOULD_BE_NUMBER');
+      expect(_ => { config_addVarConstant(config, 'A', '23') }).toThrowError('A_VALUE_SHOULD_BE_NUMBER');
     });
 
-    describe('with array', function() {
+    describe('with array', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         let value = 50;
 
         config_addVarConstant(config, 'A', value);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(value, value));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(value, value));
       });
     });
 
-    describe('with numbers', function() {
+    describe('with numbers', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         let value = 5;
 
         config_addVarConstant(config, 'A', value);
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(value, value));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(value, value));
       });
     });
   });
 
-  describe('config_addVarDomain', function() {
+  describe('config_addVarDomain', () => {
 
-    it('should exist', function() {
-      expect(config_addVarDomain).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarDomain).toBe('function');
     });
 
-    it('should throw for passing on undefined', function() {
+    test('should throw for passing on undefined', () => {
       let config = config_create();
 
-      expect(_ => config_addVarDomain(config, 'A', undefined)).to.throw('DOMAIN_MUST_BE_ARRAY_HERE');
+      expect(_ => { config_addVarDomain(config, 'A', undefined) }).toThrowError('DOMAIN_MUST_BE_ARRAY_HERE');
     });
 
-    it('should throw for passing on a string', function() {
+    test('should throw for passing on a string', () => {
       let config = config_create();
 
-      expect(_ => config_addVarDomain(config, 'A', '23')).to.throw('DOMAIN_MUST_BE_ARRAY_HERE');
+      expect(_ => { config_addVarDomain(config, 'A', '23') }).toThrowError('DOMAIN_MUST_BE_ARRAY_HERE');
     });
 
-    describe('with array', function() {
+    describe('with array', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         config_addVarDomain(config, 'A', fixt_arrdom_range(50, 55));
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(50, 55));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(50, 55));
       });
     });
 
-    describe('with numbers', function() {
+    describe('with numbers', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         config_addVarDomain(config, 'A', fixt_arrdom_range(5, 12));
 
-        expect(config.allVarNames.length).to.equal(1);
-        expect(config.initialDomains[0]).to.equal(fixt_dom_range(5, 12));
+        expect(config.allVarNames.length).toBe(1);
+        expect(config.initialDomains[0]).toBe(fixt_dom_range(5, 12));
       });
     });
   });
 
-  describe('config_addVarNothing', function() {
+  describe('config_addVarNothing', () => {
 
-    it('should exist', function() {
-      expect(config_addVarNothing).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarNothing).toBe('function');
     });
 
-    it('should throw for missing the name', function() {
+    test('should throw for missing the name', () => {
       let config = config_create();
 
-      expect(_ => config_addVarNothing(config)).to.throw('Var names should be a string or anonymous');
+      expect(_ => { config_addVarNothing(config) }).toThrowError('Var names should be a string or anonymous');
     });
 
-    it('should create a new var with max range', function() {
+    test('should create a new var with max range', () => {
       let config = config_create();
 
       config_addVarNothing(config, 'A');
 
-      expect(config.allVarNames).to.eql(['A']);
-      expect(config.initialDomains[0]).to.eql(fixt_dom_range(SUB, SUP));
+      expect(config.allVarNames).toEqual(['A']);
+      expect(config.initialDomains[0]).toEqual(fixt_dom_range(SUB, SUP));
     });
   });
 
-  describe('config_addVarRange', function() {
+  describe('config_addVarRange', () => {
 
-    it('should exist', function() {
-      expect(config_addVarRange).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_addVarRange).toBe('function');
     });
 
-    it('should throw for passing on undefined', function() {
+    test('should throw for passing on undefined', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', undefined)).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', undefined) }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    it('should throw for passing on a string', function() {
+    test('should throw for passing on a string', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', '23')).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', '23') }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    it('should throw for missing lo', function() {
+    test('should throw for missing lo', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', undefined, 12)).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', undefined, 12) }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    it('should throw for missing hi', function() {
+    test('should throw for missing hi', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', 12, undefined)).to.throw('A_HI_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', 12, undefined) }).toThrowError('A_HI_MUST_BE_NUMBER');
     });
 
-    it('should throw for bad lo', function() {
+    test('should throw for bad lo', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', '10', 12)).to.throw('A_LO_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', '10', 12) }).toThrowError('A_LO_MUST_BE_NUMBER');
     });
 
-    it('should throw for bad hi', function() {
+    test('should throw for bad hi', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', 12, '12')).to.throw('A_HI_MUST_BE_NUMBER');
+      expect(_ => { config_addVarRange(config, 'A', 12, '12') }).toThrowError('A_HI_MUST_BE_NUMBER');
     });
 
-    it('should throw if hi is lower than lo', function() {
+    test('should throw if hi is lower than lo', () => {
       let config = config_create();
 
-      expect(_ => config_addVarRange(config, 'A', 12, 10)).to.throw('A_RANGES_SHOULD_ASCEND');
+      expect(_ => { config_addVarRange(config, 'A', 12, 10) }).toThrowError('A_RANGES_SHOULD_ASCEND');
     });
 
-    describe('with array', function() {
+    describe('with array', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         config_addVarRange(config, 'A', 50, 55);
 
-        expect(config.allVarNames).to.eql(['A']);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(50, 55));
+        expect(config.allVarNames).toEqual(['A']);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(50, 55));
       });
     });
 
-    describe('with numbers', function() {
+    describe('with numbers', () => {
 
-      it('should create a new var with given range', function() {
+      test('should create a new var with given range', () => {
         let config = config_create();
 
         config_addVarRange(config, 'A', 5, 12);
 
-        expect(config.allVarNames).to.eql(['A']);
-        expect(config.initialDomains[0]).to.eql(fixt_dom_range(5, 12));
+        expect(config.allVarNames).toEqual(['A']);
+        expect(config.initialDomains[0]).toEqual(fixt_dom_range(5, 12));
       });
     });
   });
 
-  describe('config_setOption', function() {
+  describe('config_setOption', () => {
 
-    it('should exist', function() {
-      expect(config_setOption).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_setOption).toBe('function');
     });
 
-    it('should set general var strategy', function() {
+    test('should set general var strategy', () => {
       let config = config_create();
       config_setOption(config, 'varStrategy', {type: 'A'});
 
-      expect(config.varStratConfig.type).to.equal('A');
+      expect(config.varStratConfig.type).toBe('A');
     });
 
-    it('should init the var config of a single level without priorityByName', function() {
+    test(
+      'should init the var config of a single level without priorityByName',
+      () => {
+        let config = config_create();
+        config_setOption(config, 'varStrategy', {type: 'max'});
+
+        expect(config.varStratConfig.type).toBe('max');
+        expect(config.varStratConfig._priorityByIndex).toBeUndefined();
+      }
+    );
+
+    test(
+      'should init the var config of a single level and a priorityByName',
+      () => {
+        let config = config_create();
+        config_setOption(config, 'varStrategy', {
+          type: 'list',
+          priorityByName: ['B_list', 'A_list'],
+        });
+
+        expect(config.varStratConfig.priorityByName).toEqual(['B_list', 'A_list']);
+      }
+    );
+
+    test('should throw for some legacy config structs', () => {
       let config = config_create();
-      config_setOption(config, 'varStrategy', {type: 'max'});
 
-      expect(config.varStratConfig.type).to.eql('max');
-      expect(config.varStratConfig._priorityByIndex).to.equal(undefined);
+      expect(_ => { config_setOption(config, 'var', {}) }).toThrowError('REMOVED. Replace `var` with `varStrategy`');
+      expect(_ => { config_setOption(config, 'varStrategy', _ => 0) }).toThrowError('functions no longer supported');
+      expect(_ => { config_setOption(config, 'varStrategy', 'foo') }).toThrowError('strings should be passed on as');
+      expect(_ => { config_setOption(config, 'varStrategy', 15) }).toThrowError('varStrategy should be object');
+      expect(_ => { config_setOption(config, 'varStrategy', {name: 'foo'}) }).toThrowError('name should be type');
+      expect(_ => { config_setOption(config, 'varStrategy', {dist_name: 'foo'}) }).toThrowError('dist_name should be type');
+      expect(_ => { config_setOption(config, 'val', {}) }).toThrowError('REMOVED. Replace `var` with `valueStrategy`');
     });
 
-    it('should init the var config of a single level and a priorityByName', function() {
-      let config = config_create();
-      config_setOption(config, 'varStrategy', {
-        type: 'list',
-        priorityByName: ['B_list', 'A_list'],
-      });
-
-      expect(config.varStratConfig.priorityByName).to.eql(['B_list', 'A_list']);
-    });
-
-    it('should throw for some legacy config structs', function() {
-      let config = config_create();
-
-      expect(_ => config_setOption(config, 'var', {})).to.throw('REMOVED. Replace `var` with `varStrategy`');
-      expect(_ => config_setOption(config, 'varStrategy', _ => 0)).to.throw('functions no longer supported');
-      expect(_ => config_setOption(config, 'varStrategy', 'foo')).to.throw('strings should be passed on as');
-      expect(_ => config_setOption(config, 'varStrategy', 15)).to.throw('varStrategy should be object');
-      expect(_ => config_setOption(config, 'varStrategy', {name: 'foo'})).to.throw('name should be type');
-      expect(_ => config_setOption(config, 'varStrategy', {dist_name: 'foo'})).to.throw('dist_name should be type');
-      expect(_ => config_setOption(config, 'val', {})).to.throw('REMOVED. Replace `var` with `valueStrategy`');
-    });
-
-    it('should copy the targeted var names', function() {
+    test('should copy the targeted var names', () => {
       let config = config_create();
       config_setOption(config, 'targeted_var_names', ['A']);
 
-      expect(config.targetedVars).to.eql(['A']);
+      expect(config.targetedVars).toEqual(['A']);
     });
 
-    it('should copy the var distribution config', function() {
+    test('should copy the var distribution config', () => {
       let config = config_create();
       config_setOption(config, 'varValueStrat', {valtype: 'B'}, 'A');
 
-      expect(config.varDistOptions).to.eql({A: {valtype: 'B'}});
+      expect(config.varDistOptions).toEqual({A: {valtype: 'B'}});
     });
 
-    it('DEPRECATED; remove once actually obsolete', function() {
+    test('DEPRECATED; remove once actually obsolete', () => {
       let config = config_create();
 
-      expect(_ => config_setOption(config, 'varStratOverride', {valtype: 'B'}, 'A')).to.throw('deprecated');
+      expect(_ => { config_setOption(config, 'varStratOverride', {valtype: 'B'}, 'A') }).toThrowError('deprecated');
     });
 
-    it('should copy the beforeSpace callback', function() {
+    test('should copy the beforeSpace callback', () => {
       let config = config_create();
       config_setOption(config, 'beforeSpace', 'A');
 
-      expect(config.beforeSpace).to.equal('A');
+      expect(config.beforeSpace).toBe('A');
     });
 
-    it('should copy the afterSpace callback', function() {
+    test('should copy the afterSpace callback', () => {
       let config = config_create();
       config_setOption(config, 'afterSpace', 'A');
 
-      expect(config.afterSpace).to.equal('A');
+      expect(config.afterSpace).toBe('A');
     });
 
-    it('should override value strats per var', function() {
+    test('should override value strats per var', () => {
       let config = config_create();
       config_setOption(config, 'varStratOverrides', {
         'A': 'foobar',
       });
 
-      expect(config.varDistOptions).to.be.an('object');
-      expect(config.varDistOptions.A).to.equal('foobar');
+      expect(typeof config.varDistOptions).toBe('object');
+      expect(config.varDistOptions.A).toBe('foobar');
     });
 
-    it('should override value strats per var', function() {
+    test('should override value strats per var', () => {
       let config = config_create();
       config_setOption(config, 'varValueStrat', {
         'strat': 'foobar',
       }, 'A');
 
-      expect(config.varDistOptions).to.be.an('object');
-      expect(config.varDistOptions.A).to.be.an('object');
-      expect(config.varDistOptions.A.strat).to.equal('foobar');
+      expect(typeof config.varDistOptions).toBe('object');
+      expect(typeof config.varDistOptions.A).toBe('object');
+      expect(config.varDistOptions.A.strat).toBe('foobar');
     });
 
-    it('should throw for setting it twice', function() {
+    test('should throw for setting it twice', () => {
       let config = config_create();
       config_setOption(config, 'varValueStrat', {
         'strat': 'foobar',
       }, 'A');
 
-      expect(_ => config_setOption(config, 'varValueStrat', {'another': 'thing'}, 'A')).to.throw('should not be known yet');
+      expect(_ => { config_setOption(config, 'varValueStrat', {'another': 'thing'}, 'A') }).toThrowError('should not be known yet');
     });
 
-    it('should throw for unknown config values', function() {
+    test('should throw for unknown config values', () => {
       let config = config_create();
-      expect(_ => config_setOption(config, 'unknown value test', {'strat': 'foobar'}, 'A')).to.throw('unknown option');
+      expect(_ => { config_setOption(config, 'unknown value test', {'strat': 'foobar'}, 'A') }).toThrowError('unknown option');
     });
   });
 
-  describe('config_setOptions', function() {
+  describe('config_setOptions', () => {
 
-    it('should exist', function() {
-      expect(config_setOptions).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_setOptions).toBe('function');
     });
 
-    it('should not require an options object', function() {
+    test('should not require an options object', () => {
       let config = config_create();
       config_setOptions(config);
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    it('should override the global var strategy', function() {
+    test('should override the global var strategy', () => {
       let config = config_create();
       config_setOptions(config, {
         varStrategy: {
@@ -496,152 +501,155 @@ describe('fdo/config.spec', function() {
         },
       });
 
-      expect(config.varStratConfig.type).to.eql('midmax');
+      expect(config.varStratConfig.type).toBe('midmax');
     });
 
-    it('should override the global value strategy', function() {
+    test('should override the global value strategy', () => {
       let config = config_create();
-      expect(config.valueStratName).to.not.eql('mid');
+      expect(config.valueStratName).not.toBe('mid');
 
       config_setOptions(config, {valueStrategy: 'mid'});
 
-      expect(config.valueStratName).to.eql('mid');
+      expect(config.valueStratName).toBe('mid');
     });
 
-    it('should override the list of targeted var names', function() {
+    test('should override the list of targeted var names', () => {
       let config = config_create();
-      expect(config.targetedVars).to.eql('all');
+      expect(config.targetedVars).toBe('all');
 
       config_setOptions(config, {targeted_var_names: ['A', 'B']});
 
-      expect(config.targetedVars).to.eql(['A', 'B']);
+      expect(config.targetedVars).toEqual(['A', 'B']);
     });
 
-    it('should override the var-specific strategies for multiple vars', function() {
+    test(
+      'should override the var-specific strategies for multiple vars',
+      () => {
+        let config = config_create();
+        expect(config.varDistOptions).toEqual({});
+
+        config_setOptions(config, {varStratOverrides: {
+          'A': 'something for a',
+          'B': 'something for b',
+        }});
+
+        expect(config.varDistOptions).toEqual({
+          'A': 'something for a',
+          'B': 'something for b',
+        });
+      }
+    );
+
+    test('should override the var-specific strategy for one var', () => {
       let config = config_create();
-      expect(config.varDistOptions).to.eql({});
-
-      config_setOptions(config, {varStratOverrides: {
-        'A': 'something for a',
-        'B': 'something for b',
-      }});
-
-      expect(config.varDistOptions).to.eql({
-        'A': 'something for a',
-        'B': 'something for b',
-      });
-    });
-
-    it('should override the var-specific strategy for one var', function() {
-      let config = config_create();
-      expect(config.varDistOptions).to.eql({});
+      expect(config.varDistOptions).toEqual({});
 
       config_setOptions(config, {varValueStrat: 'max', varStratOverrideName: 'A'});
 
-      expect(config.varDistOptions).to.eql({
+      expect(config.varDistOptions).toEqual({
         'A': 'max',
       });
     });
 
-    it('DEPRECATED; remove once obsoleted', function() {
+    test('DEPRECATED; remove once obsoleted', () => {
       let config = config_create();
-      expect(config.varDistOptions).to.eql({});
+      expect(config.varDistOptions).toEqual({});
 
       config_setOptions(config, {varStratOverride: 'max', varStratOverrideName: 'A'});
 
-      expect(config.varDistOptions).to.eql({
+      expect(config.varDistOptions).toEqual({
         'A': 'max',
       });
     });
 
-    it('should set the beforeSpace callback', function() {
+    test('should set the beforeSpace callback', () => {
       let config = config_create();
       config_setOptions(config, {beforeSpace: function() {}});
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
 
-    it('should set the afterSpace callback', function() {
+    test('should set the afterSpace callback', () => {
       let config = config_create();
       config_setOptions(config, {afterSpace: function() {}});
 
-      expect(true).to.eql(true);
+      expect(true).toBe(true);
     });
   });
 
-  describe('config_clone', function() {
+  describe('config_clone', () => {
 
-    it('should exist', function() {
-      expect(config_clone).to.be.a('function');
+    test('should exist', () => {
+      expect(typeof config_clone).toBe('function');
     });
 
-    it('should clone a config', function() {
+    test('should clone a config', () => {
       let config = config_create();
       let clone = config_clone(config);
       delete config.beforeSpace;
       delete config.afterSpace;
 
-      expect(clone).to.eql(config);
+      expect(clone).toEqual(config);
     });
 
-    it('should clone a config with targetedVars as an array', function() {
+    test('should clone a config with targetedVars as an array', () => {
       let config = config_create();
       let vars = ['a', 'b'];
       config.targetedVars = vars;
       let clone = config_clone(config);
 
-      expect(clone.targetedVars).to.eql(vars);
+      expect(clone.targetedVars).toEqual(vars);
     });
 
-    it('should clone a config with targetedVars as a string', function() {
+    test('should clone a config with targetedVars as a string', () => {
       let config = config_create();
       let vars = 'foobala';
       config.targetedVars = vars;
       let clone = config_clone(config);
 
-      expect(clone.targetedVars).to.eql(vars);
+      expect(clone.targetedVars).toEqual(vars);
     });
 
-    it('should clone a config with targetedVars as an undefined', function() {
+    test('should clone a config with targetedVars as an undefined', () => {
       let config = config_create();
       config.targetedVars = undefined;
       let clone = config_clone(config);
 
-      expect(clone.targetedVars).to.eql(undefined);
+      expect(clone.targetedVars).toEqual(undefined);
     });
 
-    it('should accept a new set of new vars', function() {
+    test('should accept a new set of new vars', () => {
       let config = config_create();
       let newVars = [];
       let clone = config_clone(config, newVars);
 
-      expect(clone.initialDomains).to.eql(newVars);
+      expect(clone.initialDomains).toEqual(newVars);
     });
   });
 
-  it('should reject a known var', function() {
+  test('should reject a known var', () => {
     let config = config_create();
     config_addVarRange(config, 'again', 0, 10);
-    expect(_ => config_addVarRange(config, 'again', 0, 10)).to.throw('Var name already part of this config. Probably a bug?');
+    expect(_ => { config_addVarRange(config, 'again', 0, 10) }).toThrowError('Var name already part of this config. Probably a bug?');
   });
 
-  it('should reject number as var', function() {
+  test('should reject number as var', () => {
     let config = config_create();
-    expect(_ => config_addVarRange(config, 200, 0, 10)).to.throw('A_VARNAME_SHOULD_BE_STRING_OR_TRUE');
+    expect(_ => { config_addVarRange(config, 200, 0, 10) }).toThrowError('A_VARNAME_SHOULD_BE_STRING_OR_TRUE');
   });
 
-  it('should reject zero as var', function() {
+  test('should reject zero as var', () => {
     let config = config_create();
-    expect(_ => config_addVarRange(config, 0, 0, 10)).to.throw('A_VARNAME_SHOULD_BE_STRING_OR_TRUE');
+    expect(_ => { config_addVarRange(config, 0, 0, 10) }).toThrowError('A_VARNAME_SHOULD_BE_STRING_OR_TRUE');
   });
 
-  it('should reject stringified zero as var', function() {
+  test('should reject stringified zero as var', () => {
     let config = config_create();
-    expect(_ => config_addVarRange(config, '0', 0, 10)).to.throw('Don\'t use numbers as var names');
+    expect(_ => { config_addVarRange(config, '0', 0, 10) }).toThrowError('Don\'t use numbers as var names');
   });
 
-  it('should reject adding a number as a var', function() {
+  test('should reject adding a number as a var', () => {
     let config = config_create();
-    expect(_ => config_addVarRange(config, '0', 0, 10)).to.throw('Don\'t use numbers as var names');
+    expect(_ => { config_addVarRange(config, '0', 0, 10) }).toThrowError('Don\'t use numbers as var names');
   });
 });

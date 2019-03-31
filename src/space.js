@@ -1,13 +1,29 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-  getTerm,
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
+import {
+  NO_SUCH_VALUE,
+} from 'fdlib/src/constants';
+
+import {
+  domain__debug,
+  domain_getValue,
+  domain_isEmpty,
+  domain_isSolved,
+  domain_toArr,
+  domain_toSmallest,
+  domain_toStr,
+} from 'fdlib/src/domain';
+
+import {
   THROW,
-} from '../../fdlib/src/helpers';
+  getTerm,
+} from 'fdlib/src/helpers';
 
 import {
   TRIE_EMPTY,
@@ -18,23 +34,11 @@ import {
   trie_create,
   trie_get,
   trie_getNum,
-} from '../../fdlib/src/trie';
+} from 'fdlib/src/trie';
 
 import {
   config_clone,
 } from './config';
-
-import {
-  domain__debug,
-  domain_getValue,
-  domain_isEmpty,
-  domain_isSolved,
-  domain_toArr,
-  domain_toSmallest,
-  domain_toStr,
-} from '../../fdlib/src/domain';
-
-// BODY_START
 
 let space_uid = 0;
 
@@ -550,21 +554,18 @@ function space_generateVars(space, config) {
 function _space_debug(space, config, printPath) {
   let term = getTerm();
   term.log('\n## Space:');
-  // __REMOVE_BELOW_FOR_ASSERTS__
-  term.log('# Meta:');
-  term.log('uid:', space._uid);
-  term.log('depth:', space._depth);
-  term.log('child:', space._child);
-  term.log('children:', space._child_count);
-  if (printPath) term.log('path:', space._path);
-  // __REMOVE_ABOVE_FOR_ASSERTS__
+  if (process.env.NODE_ENV !== 'production') {
+    term.log('# Meta:');
+    term.log('uid:', space._uid);
+    term.log('depth:', space._depth);
+    term.log('child:', space._child);
+    term.log('children:', space._child_count);
+    if (printPath) term.log('path:', space._path);
+  }
   term.log('# Domains:');
   term.log(space.vardoms.map(domain_toArr).map((d, i) => (d + '').padEnd(15, ' ') + ((!config || config.allVarNames[i] === String(i)) ? '' : ' (' + config.allVarNames[i] + ')')).join('\n'));
   term.log('##\n');
 }
-
-
-// BODY_STOP
 
 export {
   space_createClone,
@@ -573,12 +574,12 @@ export {
   space_generateVars,
   space_getDomainArr,
   space_getUnsolvedVarCount,
-  _space_getUnsolvedVarNamesFresh,
   space_getVarSolveState,
   space_initFromConfig,
-  space_updateUnsolvedVarList,
   space_propagate,
   space_solution,
   space_toConfig,
+  space_updateUnsolvedVarList,
   _space_debug,
+  _space_getUnsolvedVarNamesFresh,
 };

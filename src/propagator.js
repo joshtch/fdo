@@ -1,48 +1,52 @@
-import {
-  ASSERT,
-  THROW,
-} from '../../fdlib/src/helpers';
+import { ASSERT } from 'fdlib/src/assert';
 
-import {
-  config_addPropagator,
-  config_addVarAnonNothing,
-} from './config';
-
-import propagator_markovStepBare from './propagators/markov';
-import propagator_reifiedStepBare from './propagators/reified';
-import propagator_ringStepBare from './propagators/ring';
-import propagator_minStep from './propagators/min';
-import propagator_mulStep from './propagators/mul';
-import propagator_divStep from './propagators/div';
-import {
-  propagator_gtStepBare,
-  propagator_gtStepWouldReject,
-  propagator_ltStepBare,
-  propagator_ltStepWouldReject,
-} from './propagators/lt';
-import {
-  propagator_gteStepBare,
-  propagator_gteStepWouldReject,
-  propagator_lteStepBare,
-  propagator_lteStepWouldReject,
-} from './propagators/lte';
-import {
-  propagator_eqStepBare,
-  propagator_eqStepWouldReject,
-} from './propagators/eq';
-import {
-  propagator_neqStepBare,
-  propagator_neqStepWouldReject,
-} from './propagators/neq';
 import {
   //domain__debug,
   domain_invMul,
   domain_minus,
   domain_mul,
   domain_plus,
-} from '../../fdlib/src/domain';
+} from 'fdlib/src/domain';
 
-// BODY_START
+import {
+  THROW,
+} from 'fdlib/src/helpers';
+
+import {
+  config_addPropagator,
+  config_addVarAnonNothing,
+} from './config';
+
+import propagator_divStep from './propagators/div';
+import propagator_markovStepBare from './propagators/markov';
+import propagator_minStep from './propagators/min';
+import propagator_mulStep from './propagators/mul';
+import propagator_reifiedStepBare from './propagators/reified';
+import propagator_ringStepBare from './propagators/ring';
+
+import {
+  propagator_gtStepBare,
+  propagator_gtStepWouldReject,
+  propagator_ltStepBare,
+  propagator_ltStepWouldReject,
+} from './propagators/lt';
+
+import {
+  propagator_gteStepBare,
+  propagator_gteStepWouldReject,
+  propagator_lteStepBare,
+  propagator_lteStepWouldReject,
+} from './propagators/lte';
+
+import {
+  propagator_eqStepBare,
+  propagator_eqStepWouldReject,
+} from './propagators/eq';
+
+import {
+  propagator_neqStepBare,
+  propagator_neqStepWouldReject,
+} from './propagators/neq';
 
 /**
  * @param {string} name
@@ -475,8 +479,6 @@ function propagator_addMarkov(config, varIndex) {
   config_addPropagator(config, propagator_create('markov', propagator_markovStepBare, varIndex));
 }
 
-// BODY_STOP
-
 export {
   propagator_addDistinct,
   propagator_addDiv,
@@ -486,10 +488,10 @@ export {
   propagator_addLt,
   propagator_addLte,
   propagator_addMarkov,
+  propagator_addMin,
   propagator_addMul,
   propagator_addNeq,
   propagator_addPlus,
-  propagator_addMin,
   propagator_addProduct,
   propagator_addReified,
   propagator_addRingMul,

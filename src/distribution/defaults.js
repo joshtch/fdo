@@ -1,8 +1,6 @@
 import {
   THROW,
-} from '../../../fdlib/src/helpers';
-
-// BODY_START
+} from 'fdlib/src/helpers';
 
 const PRESETS = {
   defaults: {
@@ -37,6 +35,5 @@ function distribution_getDefaults(name) {
   THROW(`distribution.get_defaults: Unknown preset: ${name}`);
 }
 
-// BODY_STOP
-
+export { distribution_getDefaults };
 export default distribution_getDefaults;

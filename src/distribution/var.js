@@ -1,15 +1,17 @@
 import {
   ASSERT,
   ASSERT_NORDOM,
-  THROW,
-} from '../../../fdlib/src/helpers';
+} from 'fdlib/src/assert';
+
 import {
   domain_max,
   domain_min,
   domain_size,
-} from '../../../fdlib/src/domain';
+} from 'fdlib/src/domain';
 
-// BODY_START
+import {
+  THROW,
+} from 'fdlib/src/helpers';
 
 const BETTER = 1;
 const SAME = 2;
@@ -233,15 +235,12 @@ function distribution_varFallback(space, config, varIndex1, varIndex2, fallbackC
   return THROW(`Unknown var dist fallback name: ${distName}`);
 }
 
-// BODY_STOP
-
 export default distribution_getNextVarIndex;
 export {
   BETTER,
   SAME,
   WORSE,
 
-  // __REMOVE_BELOW_FOR_DIST__
   // for testing
   distribution_varByList,
   distribution_varByMax,
@@ -249,5 +248,4 @@ export {
   distribution_varByMin,
   distribution_varByMinSize,
   distribution_varFallback,
-  // __REMOVE_ABOVE_FOR_DIST__
 };

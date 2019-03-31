@@ -1,19 +1,18 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_hasNoZero,
   domain_isZero,
   domain_removeGtUnsafe,
   domain_removeValue,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * A boolean variable that represents whether a comparison
@@ -76,6 +75,5 @@ function propagator_reifiedStepBare(space, config, leftVarIndex, rightVarIndex, 
   ASSERT_NORDOM(space.vardoms[resultVarIndex], true, domain__debug);
 }
 
-// BODY_STOP
-
+export { propagator_reifiedStepBare };
 export default propagator_reifiedStepBare;

@@ -1,23 +1,26 @@
 import {
-  LOG_FLAG_SEARCH,
-  NO_SUCH_VALUE,
-
   ASSERT,
   ASSERT_LOG,
-} from '../../fdlib/src/helpers';
+  LOG_FLAG_SEARCH,
+} from 'fdlib/src/assert';
+
 import {
-  space_createClone,
-  space_updateUnsolvedVarList,
-  space_propagate,
-} from './space';
+  NO_SUCH_VALUE,
+} from 'fdlib/src/constants';
+
 import {
   domain__debug,
   domain_isSolved,
-} from '../../fdlib/src/domain';
+} from 'fdlib/src/domain';
+
+import {
+  space_createClone,
+  space_propagate,
+  space_updateUnsolvedVarList,
+} from './space';
+
 import distribution_getNextVarIndex from './distribution/var';
 import distribute_getNextDomainForVar from './distribution/value';
-
-// BODY_START
 
 /**
  * Depth first search.
@@ -191,10 +194,9 @@ function _search_onSolve(state, space, stack) {
   state.more = stack.length > 0;
 }
 
-// BODY_STOP
-
-export default search_depthFirst;
 export {
   search_afterPropagation,
   search_createNextSpace,
+  search_depthFirst,
 };
+export default search_depthFirst;

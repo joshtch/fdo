@@ -2,18 +2,21 @@
 // it converts a DSL string to a $config
 // see /docs/dsl.txt for syntax
 // see exporter.js to convert a config to this DSL
+
 import {
   SUB,
   SUP,
+} from 'fdlib/src/constants';
 
+import {
   getTerm,
-} from '../../fdlib/src/helpers';
+} from 'fdlib/src/helpers';
+
 import {
   config_setOption,
 } from './config';
-import FDO from './fdo';
 
-// BODY_START
+import FDO from './fdo';
 
 /**
  * @param {string} str
@@ -1213,6 +1216,5 @@ function importer_main(str, solver, _debug) {
   }
 }
 
-// BODY_STOP
-
+export { importer_main };
 export default importer_main;

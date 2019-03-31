@@ -1,17 +1,16 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_mul,
   domain_intersection,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * @param {$space} space
@@ -51,6 +50,5 @@ function _propagator_mulStep(domain1, domain2, domResult) {
   return domain_intersection(domResult, domain);
 }
 
-// BODY_STOP
-
+export { propagator_mulStep };
 export default propagator_mulStep;

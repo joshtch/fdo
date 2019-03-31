@@ -1,19 +1,18 @@
 import {
-  LOG_FLAG_PROPSTEPS,
-
   ASSERT,
   ASSERT_LOG,
   ASSERT_NORDOM,
-} from '../../../fdlib/src/helpers';
+
+  LOG_FLAG_PROPSTEPS,
+} from 'fdlib/src/assert';
+
 import {
   domain__debug,
   domain_max,
   domain_min,
   domain_removeGte,
   domain_removeLte,
-} from '../../../fdlib/src/domain';
-
-// BODY_START
+} from 'fdlib/src/domain';
 
 /**
  * @param {$space} space
@@ -81,8 +80,6 @@ function propagator_gtStepWouldReject(domain1, domain2) {
   ASSERT(domain1 && domain2, 'NON_EMPTY_DOMAIN_EXPECTED');
   return propagator_ltStepWouldReject(domain2, domain1);
 }
-
-// BODY_STOP
 
 export {
   propagator_gtStepBare,
