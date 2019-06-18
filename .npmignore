@@ -1,7 +1,7 @@
-# disallow anything except for src and build
+# disallow anything except for builds and rollup
 # (readme, changelog, packagejson are always included)
+
 *
 */
 
-!src/**/*
-!dist/fdo.min.js
+!dist/**/*

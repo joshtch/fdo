@@ -17,7 +17,7 @@ module.exports = {
     ],
   ],
   plugins: [
-    // don't use `loose` mode here - need to copy symbols when spreading
+    // Don't use `loose` mode here - need to copy symbols when spreading
     '@babel/proposal-object-rest-spread',
   ],
   env: {

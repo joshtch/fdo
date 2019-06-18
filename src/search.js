@@ -44,7 +44,11 @@ function search_depthFirst(state, config, dbgCallback) {
   // stable so we propagate it first and before putting it on the stack.
   const isStart = !stack || stack.length === 0;
   if (isStart) {
-    if (!stack) stack = state.stack = [];
+    if (!stack) {
+      state.stack = [];
+      stack = state.stack;
+    }
+
     const solved = search_depthFirstLoop(state.space, config, stack, state);
     if (dbgCallback && dbgCallback(++epochs)) dbgCallback = undefined;
     if (solved) return;
@@ -130,7 +134,7 @@ function search_depthFirstLoop(space, config, stack, state) {
  */
 function search_afterPropagation(rejected, space, config, stack, state) {
   if (rejected) {
-    _search_onReject(state, space, stack);
+    space.failed = true;
     return false;
   }
 
@@ -183,20 +187,6 @@ function search_createNextSpace(space, config) {
   }
 
   // Space is an unsolved leaf node, return undefined
-}
-
-/**
- * When search fails this function is called
- *
- *
- * @param {Object} state The search state data
- * @param {$space} space The search node to fail
- * @param {$space[]} stack See state.stack
- */
-function _search_onReject(state, space, stack) {
-  // Some propagators failed so this is now a failed space and we need
-  // to pop the stack and continue from above. This is a failed space.
-  space.failed = true;
 }
 
 /**

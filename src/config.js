@@ -438,7 +438,8 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
       if (!optionValue || optionValue.length === 0) {
         THROW('ONLY_USE_WITH_SOME_TARGET_VARS'); // Omit otherwise to target all
       }
-      // which vars must be solved for this space to be solved
+
+      // Which vars must be solved for this space to be solved
       // string: 'all'
       // string[]: list of vars that must be solved
       // function: callback to return list of names to be solved
@@ -467,7 +468,8 @@ function config_setOption(config, optionName, optionValue, optionTarget) {
         let { matrix } = optionValue;
         if (!matrix) {
           if (optionValue.expandVectorsWith) {
-            matrix = optionValue.matrix = [{ vector: [] }];
+            optionValue.matrix = [{ vector: [] }];
+            matrix = optionValue.matrix;
           } else {
             THROW(
               'FDO: markov var missing distribution (needs matrix or expandVectorsWith)'

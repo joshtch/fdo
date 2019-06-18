@@ -1,9 +1,8 @@
 import FDO from '../../../src/fdo';
 
 describe('fdo/solver.min.spec', () => {
-
   test('should do base case', () => {
-    let solution = FDO.solve(`
+    const solution = FDO.solve(`
       : A [1 99]
       : B 0
       A > B

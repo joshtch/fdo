@@ -8,8 +8,6 @@ logs
 cache
 coverage
 dist
-es
-lib
 
 # Dependency directory
 node_modules

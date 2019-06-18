@@ -32,9 +32,9 @@ import {
   config_setOption,
 } from './config';
 
-import { exporter_main, exporter_encodeVarName } from './exporter';
+import { exporter, exporter_encodeVarName } from './exporter';
 
-import { importer_main } from './importer';
+import { importer } from './importer';
 
 import { search_depthFirst } from './search';
 
@@ -610,7 +610,7 @@ class FDO {
     ) {
       dbgCallback = epoch => {
         if ((options._debugDelay | 0) >= epoch) {
-          if (options._tostring) getTerm().log(exporter_main(this.config));
+          if (options._tostring) getTerm().log(exporter(this.config));
           if (options._debug) this._debugLegible();
           if (options._debugConfig) this._debugConfig();
           if (process.env.NODE_ENV !== 'production') {
@@ -999,7 +999,7 @@ class FDO {
       getTerm().time('      - FD Import Time:');
     }
 
-    const solver = importer_main(s, this, _debug);
+    const solver = importer(s, this, _debug);
     if (this.logging) {
       getTerm().timeEnd('      - FD Import Time:');
     }
@@ -1018,7 +1018,7 @@ class FDO {
    * @returns {string}
    */
   exp(space, usePropagators, minimal, withDomainComments) {
-    return exporter_main(
+    return exporter(
       this.config,
       space.vardoms,
       usePropagators,
@@ -1096,28 +1096,31 @@ class FDO {
  */
 function _clone(value) {
   switch (typeof value) {
-    case 'object':
+    case 'object': {
       if (!value) return null;
       if (Array.isArray(value)) {
         return value.map(v => _clone(v));
       }
 
       const obj = {};
-      for (const key in value) {
-        obj[key] = _clone(value[key]);
+      for (const [key, val] of Object.entries(value)) {
+        obj[key] = _clone(val);
       }
 
       return obj;
-    case 'function':
+    }
+
+    case 'function': {
       const fobj = {
         __THIS_IS_A_FUNCTION: 1,
         __source: value.toString(),
       };
-      for (const key in value) {
-        fobj[key] = _clone(value[key]);
+      for (const [key, val] of Object.entries(value)) {
+        fobj[key] = _clone(val);
       }
 
       return fobj;
+    }
 
     case 'string':
     case 'number':

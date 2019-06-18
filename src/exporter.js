@@ -21,7 +21,7 @@ import { THROW, getTerm, domain_getValue, domain_toArr, trie_get } from 'fdlib';
  * @param {boolean} [realName] Use the original var names?
  * @returns {string}
  */
-function exporter_main(
+function exporter(
   config,
   vardoms,
   usePropagators,
@@ -50,7 +50,7 @@ function exporter_main(
     if (
       overrides &&
       (overrides.valtype !== 'list' ||
-        (overrides.list && overrides.list.length))
+        (overrides.list && overrides.list.length > 0))
     ) {
       s += ' @' + overrides.valtype;
       switch (overrides.valtype) {
@@ -248,9 +248,8 @@ function exporter_main(
         })
         .filter(s => Boolean(s));
 
-  const propagators = !usePropagators
-    ? []
-    : config._propagators
+  const propagators = usePropagators
+    ? config._propagators
         .map(propagator => {
           const varIndex1 = propagator.index1;
           const varIndex2 = propagator.index2;
@@ -378,7 +377,8 @@ function exporter_main(
 
           return s;
         })
-        .filter(s => Boolean(s));
+        .filter(s => Boolean(s))
+    : [];
 
   return [
     '## constraint problem export',
@@ -434,4 +434,4 @@ function exporter_domstr(domain) {
   return '[' + arrdom.join(' ') + ']';
 }
 
-export { exporter_main, exporter_encodeVarName };
+export { exporter, exporter_encodeVarName };

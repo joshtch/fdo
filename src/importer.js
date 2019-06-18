@@ -15,7 +15,7 @@ import FDO from './fdo';
  * @param {boolean} [_debug] Log out entire input with error token on fail?
  * @returns {FDO}
  */
-function importer_main(str, solver, _debug) {
+function importer(str, solver, _debug) {
   if (!solver) solver = new FDO();
 
   let pointer = 0;
@@ -346,7 +346,7 @@ function importer_main(str, solver, _debug) {
   }
 
   function parseMarkov(mod) {
-    while (true) {
+    for (;;) {
       skipWhitespaces();
       if (str.slice(pointer, pointer + 7) === 'matrix(') {
         // TOFIX: there is no validation here. apply stricter and safe matrix parsing
@@ -1127,7 +1127,7 @@ function importer_main(str, solver, _debug) {
   function parseIdentList() {
     const idents = [];
 
-    while (true) {
+    for (;;) {
       skipWhitespaces();
       if (atEol()) THROW('Missing target char at eol/eof');
       if (read() === ')') break;
@@ -1348,4 +1348,4 @@ function importer_main(str, solver, _debug) {
   }
 }
 
-export { importer_main };
+export { importer };

@@ -53,7 +53,7 @@ function propagator_minStep(space, config, varIndex1, varIndex2, varIndex3) {
   ASSERT_NORDOM(space.vardoms[varIndex1], true, domain__debug);
   ASSERT_NORDOM(space.vardoms[varIndex2], true, domain__debug);
   ASSERT(
-    domain_isEmpty(nR) || !void ASSERT_NORDOM(nR, true, domain__debug),
+    domain_isEmpty(nR) || (ASSERT_NORDOM(nR, true, domain__debug) || true),
     'R can be empty'
   );
 }

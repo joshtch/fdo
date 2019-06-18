@@ -1,9 +1,8 @@
 import FDO from '../../../src/fdo';
 
 describe('fdo/solver.max.spec', () => {
-
   test('should do base case', () => {
-    let solution = FDO.solve(`
+    const solution = FDO.solve(`
       : A [1 99]
       : B 0
       A > B
@@ -11,6 +10,6 @@ describe('fdo/solver.max.spec', () => {
       @custom val-strat max
     `);
 
-    expect(solution.A).toBe(99); // not 1.
+    expect(solution.A).toBe(99); // Not 1.
   });
 });

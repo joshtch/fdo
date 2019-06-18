@@ -52,9 +52,9 @@ function distribution_getFunc(distName) {
       return distribution_varByList;
     case 'throw':
       return THROW('Throwing an error because var-strat requests it');
+    default:
+      return THROW('unknown next var func', distName);
   }
-
-  return THROW('unknown next var func', distName);
 }
 
 /**
@@ -301,7 +301,6 @@ export {
   BETTER,
   SAME,
   WORSE,
-
   // For testing
   distribution_varByList,
   distribution_varByMax,

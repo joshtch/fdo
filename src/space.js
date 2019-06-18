@@ -429,7 +429,19 @@ function space_propagateStep(
 
   const { vardoms } = space;
 
-  const { index1, index2, index3 } = propagator;
+  const {
+    index1,
+    index2,
+    index3,
+    stepper,
+    arg1,
+    arg2,
+    arg3,
+    arg4,
+    arg5,
+    arg6,
+  } = propagator;
+
   ASSERT(index1 !== 'undefined', 'all props at least use the first var...');
   const domain1 = vardoms[index1];
   const domain2 = index2 !== undefined && vardoms[index2];
@@ -439,9 +451,7 @@ function space_propagateStep(
   ASSERT(domain2 === undefined || ASSERT_NORDOM(domain2, true, domain__debug));
   ASSERT(domain3 === undefined || ASSERT_NORDOM(domain3, true, domain__debug));
 
-  const { stepper } = propagator;
   ASSERT(typeof stepper === 'function', 'stepper should be a func');
-  const { arg1, arg2, arg3, arg4, arg5, arg6 } = propagator;
   // TODO: if we can get a "solved" state here we can prevent an isSolved check later...
   stepper(
     space,
@@ -747,8 +757,7 @@ export {
   space_solution,
   space_toConfig,
   space_updateUnsolvedVarList,
-
-  // for testing
+  // For testing
   space_getUnsolvedVarCount,
   _space_debug,
   _space_getUnsolvedVarNamesFresh,
